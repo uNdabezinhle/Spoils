@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spoil • Gift Shop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Playfair+Display:wght@700&amp;display=swap');
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .heading-serif {
+            font-family: 'Playfair Display', Georgia, serif;
+        }
+
+        .nav-active {
+            color: #0F766E;
+            font-weight: 600;
+        }
+
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+
+        .tshirt-container {
+            position: relative;
+            width: 380px;
+            height: 420px;
+            margin: 0 auto;
+            background: #111827;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+        }
+
+        .product-card {
+            transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .color-swatch {
+            width: 32px;
+            height: 32px;
+            border-radius: 9999px;
+            border: 3px solid white;
+            box-shadow: 0 0 0 1px #64748b33;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        
+        .color-swatch:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-swatch.active {
+            box-shadow: 0 0 0 3px #0F766E;
+        }
+
+        .tool-btn {
+            transition: all 0.1s ease;
+        }
+        
+        .tool-btn.active {
+            background-color: #0F766E;
+            color: white;
+        }
+
+        .layer-item {
+            transition: background-color 0.1s ease;
+        }
+        
+        .layer-item:hover {
+            background-color: #1e2937;
+        }
+
+        .mock-tshirt {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .prototype-badge {
+            background: linear-gradient(90deg, #0F766E, #134e4b);
+        }
+
+        .spoil-gold {
+            color: #C9A227;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200">
+    <!-- Top Navigation -->
+    <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-screen-xl mx-auto">
+            <div class="px-8 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-x-3">
+                    <div class="w-9 h-9 bg-teal-700 rounded-xl flex items-center justify-center">
+                        <i class="fa-solid fa-gift text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <span class="text-2xl font-bold tracking-tight">Spoil</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-x-2 text-sm">
+                    <button onclick="showSection('home')" 
+                            class="nav-link px-4 py-2 rounded-xl hover:bg-slate-800 flex items-center gap-x-2 text-slate-300 hover:text-white transition-colors">
+                        <i class="fa-solid fa-home w-4"></i>
+                        <span>Home</span>
+                    </button>
+                    <button onclick="showSection('customizer')" 
+                            class="nav-link px-4 py-2 rounded-xl hover:bg-slate-800 flex items-center gap-x-2 text-slate-300 hover:text-white transition-colors">
+                        <i class="fa-solid fa-paint-brush w-4"></i>
+                        <span>Custom Gifts</span>
+                    </button>
+                    <button onclick="showSection('cart')" 
+                            class="nav-link px-4 py-2 rounded-xl hover:bg-slate-800 flex items-center gap-x-2 text-slate-300 hover:text-white transition-colors relative">
+                        <i class="fa-solid fa-shopping-cart w-4"></i>
+                        <span>Cart</span>
+                        <span id="cart-count" 
+                              class="absolute -top-1 -right-1 bg-teal-600 text-white text-[10px] font-mono w-5 h-5 rounded-full flex items-center justify-center">0</span>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-x-3">
+                    <div class="flex items-center bg-slate-900 border border-slate-700 rounded-2xl px-1 py-1">
+                        <div class="w-8 h-8 bg-slate-700 rounded-xl overflow-hidden">
+                            <img src="https://i.pravatar.cc/32?img=47" class="w-full h-full object-cover">
+                        </div>
+                        <span class="ml-2 mr-3 text-sm font-medium">Thandi M.</span>
+                    </div>
+                    
+                    <div class="prototype-badge text-white text-xs px-3 py-1.5 rounded-2xl flex items-center gap-x-1.5 font-medium">
+                        <i class="fa-solid fa-flask"></i>
+                        <span>PROTOTYPE</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HOME SECTION -->
+    <div id="home" class="section active max-w-screen-xl mx-auto px-8 pt-10 pb-16">
+        <div class="max-w-2xl">
+            <div class="inline-flex items-center gap-x-2 bg-slate-900 border border-slate-700 text-teal-400 text-xs font-medium tracking-widest px-4 h-8 rounded-3xl mb-6">
+                <div class="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
+                <span>NOW IN PROTOTYPE • SOUTH AFRICA</span>
+            </div>
+            
+            <h1 class="text-6xl leading-[1.05] font-semibold tracking-tighter">Spoil them<br>properly.</h1>
+            
+            <p class="mt-6 text-xl text-slate-400 max-w-md">Thoughtful gifts for the people who matter. Beautifully presented and delivered across South Africa.</p>
+            
+            <div class="flex items-center gap-x-4 mt-8">
+                <button onclick="showSection('customizer')" 
+                        class="px-8 h-14 bg-white hover:bg-slate-100 active:bg-slate-200 transition-all text-slate-900 font-semibold rounded-3xl flex items-center justify-center gap-x-3 text-base shadow-xl shadow-teal-950/50">
+                    <span>Browse Gifts</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                
+                <button onclick="document.getElementById('how-it-works').scrollIntoView({ behavior: 'smooth' })" 
+                        class="px-6 h-14 border border-slate-700 hover:bg-slate-900 transition-colors text-white font-medium rounded-3xl flex items-center justify-center gap-x-2">
+                    <span>How it works</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Featured Gifts -->
+        <div class="mt-16">
+            <div class="flex justify-between items-end mb-6">
+                <div>
+                    <h3 class="font-semibold text-2xl tracking-tight">Popular right now</h3>
+                    <p class="text-slate-400 text-sm">Thoughtful gifts people are sending this week</p>
+                </div>
+                <button onclick="showSection('customizer')" class="text-sm flex items-center gap-x-2 text-teal-400 hover:text-teal-300 font-medium">
+                    See all gifts <i class="fa-solid fa-chevron-right text-xs ml-1"></i>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+                <div onclick="quickStartDesign(0)" class="product-card bg-slate-900 border border-slate-800 rounded-3xl p-3 cursor-pointer group">
+                    <div class="aspect-[4/3.2] bg-slate-800 rounded-2xl overflow-hidden relative">
+                        <img src="https://picsum.photos/id/1005/400/320" class="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="Luxury flower arrangement">
+                        <div class="absolute bottom-3 right-3 bg-black/70 text-white text-[10px] px-2.5 py-px rounded font-mono">R449</div>
+                    </div>
+                    <div class="px-1 pt-4 pb-1">
+                        <div class="font-semibold">Luxury Rose Arrangement</div>
+                        <div class="text-xs text-slate-400">Premium • Same-day delivery</div>
+                    </div>
+                </div>
+                
+                <div onclick="quickStartDesign(1)" class="product-card bg-slate-900 border border-slate-800 rounded-3xl p-3 cursor-pointer group">
+                    <div class="aspect-[4/3.2] bg-slate-800 rounded-2xl overflow-hidden relative">
+                        <img src="https://picsum.photos/id/1011/400/320" class="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="Gourmet hamper">
+                        <div class="absolute bottom-3 right-3 bg-black/70 text-white text-[10px] px-2.5 py-px rounded font-mono">R679</div>
+                    </div>
+                    <div class="px-1 pt-4 pb-1">
+                        <div class="font-semibold">Signature Gourmet Hamper</div>
+                        <div class="text-xs text-slate-400">Includes wine &amp; chocolates</div>
+                    </div>
+                </div>
+                
+                <div onclick="quickStartDesign(2)" class="product-card bg-slate-900 border border-slate-800 rounded-3xl p-3 cursor-pointer group">
+                    <div class="aspect-[4/3.2] bg-slate-800 rounded-2xl overflow-hidden relative">
+                        <img src="https://picsum.photos/id/106/400/320" class="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="Personalised gift box">
+                        <div class="absolute bottom-3 right-3 bg-black/70 text-white text-[10px] px-2.5 py-px rounded font-mono">R299</div>
+                    </div>
+                    <div class="px-1 pt-4 pb-1">
+                        <div class="font-semibold">Personalised Gift Box</div>
+                        <div class="text-xs text-slate-400">Add a message • Custom ribbon</div>
+                    </div>
+                </div>
+                
+                <div onclick="quickStartDesign(3)" class="product-card bg-slate-900 border border-slate-800 rounded-3xl p-3 cursor-pointer group">
+                    <div class="aspect-[4/3.2] bg-slate-800 rounded-2xl overflow-hidden relative">
+                        <img src="https://picsum.photos/id/201/400/320" class="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="Experience voucher">
+                        <div class="absolute bottom-3 right-3 bg-black/70 text-white text-[10px] px-2.5 py-px rounded font-mono">R550</div>
+                    </div>
+                    <div class="px-1 pt-4 pb-1">
+                        <div class="font-semibold">Spa Day Experience</div>
+                        <div class="text-xs text-slate-400">For two • Nationwide</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="how-it-works" class="mt-20 pt-10 border-t border-slate-800">
+            <h3 class="font-semibold text-2xl tracking-tight mb-8">How Spoil works</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="flex gap-4">
+                    <div class="w-9 h-9 flex-shrink-0 bg-teal-900/60 text-teal-400 rounded-2xl flex items-center justify-center text-xl font-bold">1</div>
+                    <div>
+                        <div class="font-semibold">Choose a gift</div>
+                        <div class="text-sm text-slate-400 mt-1">Browse our curated collection of beautiful gifts, flowers, hampers and experiences.</div>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="w-9 h-9 flex-shrink-0 bg-teal-900/60 text-teal-400 rounded-2xl flex items-center justify-center text-xl font-bold">2</div>
+                    <div>
+                        <div class="font-semibold">Personalise it</div>
+                        <div class="text-sm text-slate-400 mt-1">Add a heartfelt message, custom ribbon or photo. Make it truly theirs.</div>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="w-9 h-9 flex-shrink-0 bg-teal-900/60 text-teal-400 rounded-2xl flex items-center justify-center text-xl font-bold">3</div>
+                    <div>
+                        <div class="font-semibold">We deliver with care</div>
+                        <div class="text-sm text-slate-400 mt-1">Beautifully packaged and delivered across South Africa — often same day.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOMIZER SECTION -->
+    <div id="customizer" class="section max-w-screen-xl mx-auto px-8 pt-8 pb-12">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-3xl font-semibold tracking-tight">Create a Custom Gift</h2>
+                <p class="text-slate-400">Design something special they’ll remember</p>
+            </div>
+            <div class="flex items-center gap-x-3">
+                <button onclick="resetCustomizer()" 
+                        class="px-5 py-2.5 text-sm flex items-center gap-x-2 border border-slate-700 hover:bg-slate-900 rounded-2xl transition-colors">
+                    <i class="fa-solid fa-undo text-xs"></i>
+                    <span>Reset</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Product Selection -->
+            <div class="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-3xl p-5 h-fit">
+                <div class="text-xs font-semibold tracking-widest text-teal-400 mb-3 px-1">CHOOSE A BASE</div>
+                
+                <div class="space-y-1.5 mb-6">
+                    <div onclick="selectProduct(0)" id="product-0"
+                         class="product-option flex items-center gap-x-3 px-3 py-[9px] rounded-2xl cursor-pointer hover:bg-slate-800 bg-slate-800 border border-teal-700">
+                        <i class="fa-solid fa-gift w-5 text-teal-400 ml-0.5"></i>
+                        <div class="flex-1">
+                            <div class="text-sm font-medium">Premium Gift Box</div>
+                            <div class="text-[10px] text-slate-400">R299 • Customisable</div>
+                        </div>
+                    </div>
+                    
+                    <div onclick="selectProduct(1)" id="product-1"
+                         class="product-option flex items-center gap-x-3 px-3 py-[9px] rounded-2xl cursor-pointer hover:bg-slate-800">
+                        <i class="fa-solid fa-flower w-5 text-slate-400 ml-0.5"></i>
+                        <div class="flex-1">
+                            <div class="text-sm font-medium">Signature Bouquet</div>
+                            <div class="text-[10px] text-slate-400">R449 • Fresh flowers</div>
+                        </div>
+                    </div>
+                    
+                    <div onclick="selectProduct(2)" id="product-2"
+                         class="product-option flex items-center gap-x-3 px-3 py-[9px] rounded-2xl cursor-pointer hover:bg-slate-800">
+                        <i class="fa-solid fa-wine-bottle w-5 text-slate-400 ml-0.5"></i>
+                        <div class="flex-1">
+                            <div class="text-sm font-medium">Gourmet Hamper</div>
+                            <div class="text-[10px] text-slate-400">R679 • Includes wine</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-1">
+                    <div class="text-xs font-semibold tracking-widest text-teal-400 mb-3">COLOUR / STYLE</div>
+                    <div class="flex flex-wrap gap-3" id="color-swatches">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                
+                <div class="mt-7 px-1">
+                    <div class="flex justify-between text-xs mb-1.5 px-0.5">
+                        <div class="font-medium text-slate-300">Total</div>
+                        <div id="price-display" class="font-mono font-semibold text-lg text-white">R299</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Area -->
+            <div class="lg:col-span-6">
+                <div class="flex justify-center">
+                    <div class="tshirt-container" id="preview-container">
+                        <img id="tshirt-bg" 
+                             src="https://picsum.photos/id/1005/380/420" 
+                             class="mock-tshirt" 
+                             style="object-position: center; filter: brightness(0.95);">
+                        
+                        <div id="canvas-wrapper" class="design-canvas-wrapper">
+                            <canvas id="design-canvas" width="190" height="220"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <div class="inline-flex items-center gap-x-2 text-xs bg-slate-900 border border-slate-700 rounded-2xl px-4 py-1 text-slate-400">
+                        <i class="fa-solid fa-sync fa-sm"></i>
+                        <span>Live Preview • Add text, photos &amp; messages</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tools Panel -->
+            <div class="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-3xl p-5 flex flex-col">
+                <div class="text-xs font-semibold tracking-widest text-teal-400 mb-3 px-1">PERSONALISE</div>
+                
+                <div class="grid grid-cols-3 gap-2 mb-5">
+                    <button onclick="addText()" 
+                            class="tool-btn flex flex-col items-center justify-center gap-y-1.5 py-3 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl text-xs">
+                        <i class="fa-solid fa-font text-lg"></i>
+                        <span class="font-medium">Add Message</span>
+                    </button>
+                    
+                    <button onclick="uploadImage()" 
+                            class="tool-btn flex flex-col items-center justify-center gap-y-1.5 py-3 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl text-xs">
+                        <i class="fa-solid fa-image text-lg"></i>
+                        <span class="font-medium">Add Photo</span>
+                    </button>
+                    
+                    <button onclick="showTemplates()" 
+                            class="tool-btn flex flex-col items-center justify-center gap-y-1.5 py-3 px-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl text-xs">
+                        <i class="fa-solid fa-magic text-lg"></i>
+                        <span class="font-medium">Templates</span>
+                    </button>
+                </div>
+
+                <div class="flex-1 min-h-[140px]">
+                    <div class="flex justify-between items-center mb-2 px-1">
+                        <div class="text-xs font-semibold tracking-widest text-teal-400">ELEMENTS</div>
+                        <button onclick="clearAllLayers()" class="text-[10px] px-2 py-px text-red-400 hover:text-red-300">Clear</button>
+                    </div>
+                    
+                    <div id="layers-list" class="space-y-1 text-sm max-h-[170px] overflow-auto pr-1 custom-scroll">
+                        <!-- Populated dynamically by JS -->
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-700 mt-auto">
+                    <button onclick="addToCart()" 
+                            class="w-full h-12 bg-teal-600 hover:bg-teal-500 active:bg-teal-700 transition-colors text-white font-semibold rounded-2xl flex items-center justify-center gap-x-3 shadow-inner">
+                        <i class="fa-solid fa-cart-plus"></i>
+                        <span id="add-to-cart-text">Add to Cart • R299</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CART SECTION -->
+    <div id="cart" class="section max-w-screen-xl mx-auto px-8 pt-8 pb-16">
+        <h2 class="text-3xl font-semibold tracking-tight mb-2">Your Cart</h2>
+        <p class="text-slate-400 mb-8">Review your gifts before checkout</p>
+        
+        <div class="max-w-3xl">
+            <div id="cart-items" class="space-y-4">
+                <!-- Populated by JS -->
+            </div>
+            
+            <div class="mt-8 border-t border-slate-700 pt-6">
+                <div class="flex justify-between text-lg font-semibold">
+                    <div>Total</div>
+                    <div id="cart-total" class="font-mono">R0</div>
+                </div>
+                <div class="text-xs text-slate-500 mt-px">Delivery calculated at checkout • Same-day available in major cities</div>
+                
+                <button onclick="checkout()" 
+                        class="mt-6 w-full h-14 bg-white text-slate-900 hover:bg-amber-50 active:bg-amber-100 transition-colors font-semibold rounded-3xl flex items-center justify-center gap-x-3 text-base">
+                    <span>Proceed to Checkout</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                
+                <div class="text-center mt-4">
+                    <div class="inline-flex items-center gap-x-2 text-xs text-slate-400">
+                        <span class="font-medium">Secured by Paystack • Beautiful packaging included</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates Modal -->
+    <div id="templates-modal" onclick="if (event.target.id === 'templates-modal') hideTemplates()" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center">
+        <div onclick="event.stopImmediatePropagation()" class="bg-slate-900 border border-slate-700 w-full max-w-md mx-4 rounded-3xl p-6">
+            <div class="flex justify-between items-center mb-5">
+                <div>
+                    <div class="font-semibold">Quick Message Templates</div>
+                    <div class="text-xs text-slate-400">Click to add to your gift</div>
+                </div>
+                <button onclick="hideTemplates()" class="text-xl text-slate-400 hover:text-white">×</button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <div onclick="applyTemplate('birthday')" class="cursor-pointer p-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-2xl text-sm">
+                    <div class="font-medium">🎂 Birthday</div>
+                    <div class="text-[10px] text-slate-400 mt-1">"Happy Birthday! Hope your day is as amazing as you are."</div>
+                </div>
+                <div onclick="applyTemplate('anniversary')" class="cursor-pointer p-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-2xl text-sm">
+                    <div class="font-medium">❤️ Anniversary</div>
+                    <div class="text-[10px] text-slate-400 mt-1">"To many more years of love and laughter together."</div>
+                </div>
+                <div onclick="applyTemplate('thankyou')" class="cursor-pointer p-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-2xl text-sm">
+                    <div class="font-medium">🙏 Thank You</div>
+                    <div class="text-[10px] text-slate-400 mt-1">"Thank you for everything you do. You are appreciated."</div>
+                </div>
+                <div onclick="applyTemplate('justbecause')" class="cursor-pointer p-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-2xl text-sm">
+                    <div class="font-medium">🌸 Just Because</div>
+                    <div class="text-[10px] text-slate-400 mt-1">"Thinking of you and wanted to make you smile today."</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Toast -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 bg-slate-900 border border-teal-700 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-x-3 text-sm">
+        <i class="fa-solid fa-check-circle text-teal-400"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <script>
+        function initTailwind() {
+            document.documentElement.style.setProperty('--accent', '#0F766E');
+        }
+        
+        let currentProduct = 0;
+        let currentColor = '#111827';
+        let fabricCanvas = null;
+        let layers = [];
+        let cart = [];
+        
+        const products = [
+            { id: 0, name: "Premium Gift Box", price: 299 },
+            { id: 1, name: "Signature Bouquet", price: 449 },
+            { id: 2, name: "Gourmet Hamper", price: 679 }
+        ];
+        
+        const colors = [
+            { name: "Deep Teal", value: "#0F766E", bg: "https://picsum.photos/id/1005/380/420" },
+            { name: "Warm Gold", value: "#C9A227", bg: "https://picsum.photos/id/1016/380/420" },
+            { name: "Soft Blush", value: "#F8E7E7", bg: "https://picsum.photos/id/160/380/420" },
+            { name: "Charcoal", value: "#1F2937", bg: "https://picsum.photos/id/201/380/420" }
+        ];
+        
+        function showSection(section) {
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.getElementById(section).classList.add('active');
+            
+            if (section === 'cart') {
+                renderCart();
+            }
+        }
+        
+        function initColorSwatches() {
+            const container = document.getElementById('color-swatches');
+            container.innerHTML = '';
+            
+            colors.forEach((color, index) => {
+                const swatch = document.createElement('div');
+                swatch.className = `color-swatch ${index === 0 ? 'active' : ''}`;
+                swatch.style.backgroundColor = color.value;
+                swatch.title = color.name;
+                swatch.onclick = () => changeColor(index, swatch);
+                container.appendChild(swatch);
+            });
+        }
+        
+        function changeColor(index, swatchElement) {
+            document.querySelectorAll('#color-swatches .color-swatch').forEach(el => el.classList.remove('active'));
+            swatchElement.classList.add('active');
+            
+            currentColor = colors[index].value;
+            
+            const bgImg = document.getElementById('tshirt-bg');
+            if (bgImg) {
+                bgImg.src = colors[index].bg;
+            }
+            
+            updatePrice();
+        }
+        
+        function selectProduct(productIndex) {
+            document.querySelectorAll('.product-option').forEach(el => {
+                el.classList.remove('bg-slate-800', 'border-teal-700');
+                el.classList.add('hover:bg-slate-800');
+            });
+            
+            const selected = document.getElementById(`product-${productIndex}`);
+            if (selected) {
+                selected.classList.add('bg-slate-800', 'border-teal-700');
+                selected.classList.remove('hover:bg-slate-800');
+            }
+            
+            currentProduct = productIndex;
+            updatePrice();
+            
+            const bgImg = document.getElementById('tshirt-bg');
+            if (productIndex === 1) {
+                bgImg.src = 'https://picsum.photos/id/1011/380/420';
+            } else if (productIndex === 2) {
+                bgImg.src = 'https://picsum.photos/id/106/380/420';
+            } else {
+                bgImg.src = colors.find(c => c.value === currentColor)?.bg || 'https://picsum.photos/id/1005/380/420';
+            }
+        }
+        
+        function updatePrice() {
+            const product = products[currentProduct];
+            let price = product.price;
+            
+            if (layers.length > 2) price += 45;
+            
+            document.getElementById('price-display').textContent = `R${price}`;
+            document.getElementById('add-to-cart-text').textContent = `Add to Cart • R${price}`;
+        }
+        
+        function initFabricCanvas() {
+            const canvasEl = document.getElementById('design-canvas');
+            
+            fabricCanvas = new fabric.Canvas(canvasEl, {
+                width: 190,
+                height: 220,
+                backgroundColor: 'transparent',
+                selection: true
+            });
+            
+            fabricCanvas.renderAll();
+            
+            fabricCanvas.on('object:added', updateLayersList);
+            fabricCanvas.on('object:removed', updateLayersList);
+            fabricCanvas.on('object:modified', updateLayersList);
+            
+            setTimeout(() => {
+                if (fabricCanvas.getObjects().length === 0) {
+                    showEmptyStateHint();
+                }
+            }, 800);
+        }
+        
+        function showEmptyStateHint() {
+            if (!fabricCanvas || fabricCanvas.getObjects().length > 0) return;
+            
+            const text = new fabric.Text("Add a message\nor photo →", {
+                left: 25,
+                top: 85,
+                fontSize: 12,
+                fill: '#64748b55',
+                fontFamily: 'Inter, system-ui',
+                textAlign: 'center',
+                selectable: false
+            });
+            fabricCanvas.add(text);
+            fabricCanvas.renderAll();
+        }
+        
+        function addText() {
+            if (!fabricCanvas) return;
+            
+            const text = prompt("Enter your message:", "Thinking of you");
+            if (!text) return;
+            
+            const fabricText = new fabric.Text(text, {
+                left: 20,
+                top: 70,
+                fontSize: 18,
+                fill: '#ffffff',
+                fontFamily: 'Inter, system-ui',
+                fontWeight: '600',
+                stroke: '#111827',
+                strokeWidth: 1,
+                shadow: new fabric.Shadow({
+                    color: 'rgba(0,0,0,0.35)',
+                    blur: 4,
+                    offsetX: 1,
+                    offsetY: 2
+                })
+            });
+            
+            fabricCanvas.add(fabricText);
+            fabricCanvas.setActiveObject(fabricText);
+            fabricCanvas.renderAll();
+            
+            updateLayersList();
+            updatePrice();
+        }
+        
+        function uploadImage() {
+            if (!fabricCanvas) return;
+            
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    fabric.Image.fromURL(ev.target.result, function(img) {
+                        const scale = Math.min(130 / img.width, 130 / img.height);
+                        img.scale(scale);
+                        img.set({
+                            left: 30,
+                            top: 50,
+                            cornerColor: '#0F766E',
+                            borderColor: '#0F766E',
+                            cornerSize: 8
+                        });
+                        
+                        fabricCanvas.add(img);
+                        fabricCanvas.setActiveObject(img);
+                        fabricCanvas.renderAll();
+                        
+                        updateLayersList();
+                        updatePrice();
+                    });
+                };
+                reader.readAsDataURL(file);
+            };
+            
+            input.click();
+        }
+        
+        function showTemplates() {
+            document.getElementById('templates-modal').classList.remove('hidden');
+            document.getElementById('templates-modal').classList.add('flex');
+        }
+        
+        function hideTemplates() {
+            const modal = document.getElementById('templates-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+        
+        function applyTemplate(type) {
+            hideTemplates();
+            if (!fabricCanvas) return;
+            
+            fabricCanvas.clear();
+            
+            let text1, text2;
+            
+            if (type === 'birthday') {
+                text1 = new fabric.Text("Happy Birthday!", {
+                    left: 18, top: 55, fontSize: 16, fill: '#fef08c', fontFamily: 'Inter', fontWeight: '700'
+                });
+                text2 = new fabric.Text("Hope your day is\nas beautiful as you", {
+                    left: 22, top: 105, fontSize: 12, fill: '#e0e7ff', fontFamily: 'Inter'
+                });
+            } else if (type === 'anniversary') {
+                text1 = new fabric.Text("Happy Anniversary", {
+                    left: 15, top: 70, fontSize: 15, fill: '#fda4af', fontFamily: 'Playfair Display, Georgia', fontStyle: 'italic'
+                });
+            } else if (type === 'thankyou') {
+                text1 = new fabric.Text("Thank You", {
+                    left: 35, top: 65, fontSize: 18, fill: '#bae6fd', fontFamily: 'Inter', fontWeight: '700'
+                });
+                text2 = new fabric.Text("For everything you do", {
+                    left: 22, top: 105, fontSize: 13, fill: '#bae6fd'
+                });
+            } else if (type === 'justbecause') {
+                text1 = new fabric.Text("Just Because", {
+                    left: 25, top: 70, fontSize: 16, fill: '#fed7aa', fontFamily: 'Inter', fontWeight: '600'
+                });
+                text2 = new fabric.Text("You deserve something\nspecial today", {
+                    left: 18, top: 110, fontSize: 12, fill: '#fed7aa'
+                });
+            }
+            
+            if (text1) fabricCanvas.add(text1);
+            if (text2) fabricCanvas.add(text2);
+            
+            fabricCanvas.renderAll();
+            updateLayersList();
+            updatePrice();
+        }
+        
+        function updateLayersList() {
+            if (!fabricCanvas) return;
+            
+            const container = document.getElementById('layers-list');
+            container.innerHTML = '';
+            layers = [];
+            
+            const objects = fabricCanvas.getObjects();
+            
+            if (objects.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'text-xs text-slate-500 px-3 py-4 text-center italic';
+                empty.textContent = 'Add a message or photo';
+                container.appendChild(empty);
+                return;
+            }
+            
+            objects.forEach((obj, index) => {
+                const layerDiv = document.createElement('div');
+                layerDiv.className = `layer-item flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer border border-transparent hover:border-slate-600`;
+                
+                let label = 'Element';
+                if (obj.type === 'text') label = obj.text.length > 16 ? obj.text.substring(0, 16) + '...' : obj.text;
+                else if (obj.type === 'image') label = 'Photo';
+                
+                layerDiv.innerHTML = `
+                    <div class="flex items-center gap-x-2 min-w-0 flex-1">
+                        <i class="fa-solid ${obj.type === 'text' ? 'fa-font' : 'fa-image'} text-teal-400 w-3.5"></i>
+                        <span class="truncate">${label}</span>
+                    </div>
+                    <button class="text-red-400 hover:text-red-500 px-1" onclick="event.stopImmediatePropagation(); removeLayer(${index})">
+                        <i class="fa-solid fa-times fa-sm"></i>
+                    </button>
+                `;
+                
+                layerDiv.onclick = () => {
+                    fabricCanvas.setActiveObject(obj);
+                    fabricCanvas.renderAll();
+                };
+                
+                container.appendChild(layerDiv);
+                layers.push(obj);
+            });
+            
+            updatePrice();
+        }
+        
+        function removeLayer(index) {
+            if (!fabricCanvas) return;
+            const obj = fabricCanvas.getObjects()[index];
+            if (obj) {
+                fabricCanvas.remove(obj);
+                fabricCanvas.renderAll();
+                updateLayersList();
+            }
+        }
+        
+        function clearAllLayers() {
+            if (!fabricCanvas) return;
+            if (!confirm('Clear everything?')) return;
+            
+            fabricCanvas.clear();
+            fabricCanvas.renderAll();
+            updateLayersList();
+            updatePrice();
+        }
+        
+        function addToCart() {
+            if (!fabricCanvas) return;
+            
+            const product = products[currentProduct];
+            const priceEl = document.getElementById('price-display').textContent;
+            const price = parseInt(priceEl.replace('R', ''));
+            
+            const previewData = fabricCanvas.toDataURL({ format: 'png', multiplier: 0.8 });
+            
+            const cartItem = {
+                id: Date.now(),
+                productId: currentProduct,
+                productName: product.name,
+                price: price,
+                preview: previewData,
+                layersCount: fabricCanvas.getObjects().length,
+                timestamp: new Date()
+            };
+            
+            cart.push(cartItem);
+            updateCartCount();
+            
+            showToast(`${product.name} added to cart!`);
+            
+            setTimeout(() => {
+                if (confirm('Item added! View your cart?')) {
+                    showSection('cart');
+                }
+            }, 1100);
+        }
+        
+        function updateCartCount() {
+            document.getElementById('cart-count').textContent = cart.length;
+        }
+        
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            container.innerHTML = '';
+            
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 border border-dashed border-slate-700 rounded-3xl">
+                        <i class="fa-solid fa-gift text-4xl text-slate-600 mb-4"></i>
+                        <p class="font-medium">Your cart is empty</p>
+                        <button onclick="showSection('customizer')" class="mt-4 text-sm px-5 py-2 bg-slate-800 hover:bg-slate-700 rounded-2xl">Browse gifts</button>
+                    </div>
+                `;
+                document.getElementById('cart-total').textContent = 'R0';
+                return;
+            }
+            
+            let total = 0;
+            
+            cart.forEach((item, index) => {
+                total += item.price;
+                
+                const itemHTML = `
+                    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-4 flex gap-4">
+                        <div class="w-20 h-20 bg-slate-800 rounded-2xl overflow-hidden flex-shrink-0 border border-slate-600">
+                            <img src="${item.preview}" class="w-full h-full object-contain" style="background: #111827">
+                        </div>
+                        
+                        <div class="flex-1 min-w-0 pt-1">
+                            <div class="font-semibold">${item.productName}</div>
+                            <div class="text-xs text-slate-400">Personalised • ${item.layersCount} elements</div>
+                            
+                            <div class="flex items-center justify-between mt-3">
+                                <div>
+                                    <span class="font-mono text-lg font-semibold">R${item.price}</span>
+                                </div>
+                                
+                                <button onclick="removeFromCart(${index})" 
+                                        class="text-red-400 hover:text-red-300 text-xs px-3 py-1 flex items-center gap-x-1">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                    <span>Remove</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += itemHTML;
+            });
+            
+            document.getElementById('cart-total').textContent = `R${total}`;
+        }
+        
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartCount();
+            renderCart();
+        }
+        
+        function checkout() {
+            if (cart.length === 0) return;
+            
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            
+            const checkoutHTML = `
+                <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-[200]">
+                    <div class="bg-slate-900 border border-slate-700 w-full max-w-md mx-4 rounded-3xl p-8">
+                        <div class="text-center">
+                            <div class="mx-auto w-16 h-16 bg-teal-900/30 text-teal-400 flex items-center justify-center rounded-2xl mb-5">
+                                <i class="fa-solid fa-lock text-3xl"></i>
+                            </div>
+                            
+                            <h3 class="text-2xl font-semibold">Checkout</h3>
+                            <p class="text-slate-400 mt-1">Secure checkout powered by Paystack</p>
+                            
+                            <div class="my-8 border-y border-slate-700 py-4 text-left px-1">
+                                <div class="flex justify-between text-sm">
+                                    <div class="text-slate-300">Subtotal</div>
+                                    <div class="font-mono">R${total}</div>
+                                </div>
+                                <div class="flex justify-between text-sm mt-1">
+                                    <div class="text-slate-300">Delivery</div>
+                                    <div class="font-mono">R65</div>
+                                </div>
+                                <div class="flex justify-between font-semibold text-lg mt-4 pt-4 border-t border-slate-700">
+                                    <div>Total due today</div>
+                                    <div class="font-mono">R${total + 65}</div>
+                                </div>
+                            </div>
+                            
+                            <button onclick="simulatePayment(this)" 
+                                    class="w-full h-12 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 transition-colors text-white font-semibold rounded-2xl flex items-center justify-center gap-x-3">
+                                <span>Pay Securely with Paystack</span>
+                            </button>
+                            
+                            <div class="text-[10px] text-center text-slate-500 mt-5">Beautiful packaging included on all orders.</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', checkoutHTML);
+        }
+        
+        function simulatePayment(buttonElement) {
+            buttonElement.innerHTML = `<span class="flex items-center gap-x-2"><i class="fa-solid fa-spinner fa-spin"></i> Processing...</span>`;
+            buttonElement.disabled = true;
+            
+            setTimeout(() => {
+                const modal = buttonElement.closest('.fixed');
+                if (modal) modal.remove();
+                
+                showToast('Payment successful! Order #SP-39281 confirmed.', 4500);
+                
+                cart = [];
+                updateCartCount();
+                
+                setTimeout(() => {
+                    showSection('home');
+                    
+                    setTimeout(() => {
+                        showToast('Thank you! Your gift will be beautifully packaged and delivered with care.', 5500);
+                    }, 1600);
+                }, 800);
+            }, 1750);
+        }
+        
+        function showToast(message, duration = 2600) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            
+            toast.style.display = 'flex';
+            toast.classList.remove('hidden');
+            
+            setTimeout(() => {
+                toast.style.transition = 'all 0.2s ease';
+                toast.style.opacity = '0';
+                
+                setTimeout(() => {
+                    toast.style.opacity = '1';
+                    toast.style.transition = '';
+                    toast.style.display = 'none';
+                    toast.classList.add('hidden');
+                }, 160);
+            }, duration);
+        }
+        
+        function quickStartDesign(productIndex) {
+            showSection('customizer');
+            
+            setTimeout(() => {
+                selectProduct(productIndex);
+                
+                setTimeout(() => {
+                    if (!fabricCanvas) return;
+                    
+                    if (productIndex === 0) {
+                        const t = new fabric.Text("Thinking of you", {
+                            left: 22, top: 75, fontSize: 15, fill: '#ffffff', fontFamily: 'Inter', fontWeight: '600'
+                        });
+                        fabricCanvas.add(t);
+                    } else if (productIndex === 1) {
+                        const t = new fabric.Text("With love", {
+                            left: 45, top: 85, fontSize: 18, fill: '#fda4af', fontFamily: 'Playfair Display, Georgia', fontStyle: 'italic'
+                        });
+                        fabricCanvas.add(t);
+                    } else {
+                        const t = new fabric.Text("Thank you", {
+                            left: 32, top: 78, fontSize: 16, fill: '#bae6fd', fontFamily: 'Inter', fontWeight: '700'
+                        });
+                        fabricCanvas.add(t);
+                    }
+                    fabricCanvas.renderAll();
+                    updateLayersList();
+                }, 550);
+            }, 250);
+        }
+        
+        function resetCustomizer() {
+            if (!fabricCanvas) return;
+            
+            if (confirm('Reset this gift?')) {
+                fabricCanvas.clear();
+                fabricCanvas.renderAll();
+                updateLayersList();
+                updatePrice();
+            }
+        }
+        
+        function initProductOptions() {
+            const first = document.getElementById('product-0');
+            if (first) {
+                first.classList.add('bg-slate-800', 'border-teal-700');
+            }
+            
+            document.getElementById('price-display').textContent = `R${products[0].price}`;
+            document.getElementById('add-to-cart-text').textContent = `Add to Cart • R${products[0].price}`;
+        }
+        
+        function initEverything() {
+            initTailwind();
+            initColorSwatches();
+            initProductOptions();
+            initFabricCanvas();
+            
+            currentColor = colors[0].value;
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.key === '/' && document.getElementById('customizer').classList.contains('active')) {
+                    e.preventDefault();
+                    addText();
+                }
+            });
+            
+            updateCartCount();
+            
+            console.log('%c[Spoil Prototype] Rebranded and ready.', 'color:#64748b');
+        }
+        
+        window.onload = function() {
+            initEverything();
+        };
+        
+        window.Spoil = {
+            addText: () => addText(),
+            showTemplates: () => showTemplates(),
+            reset: () => resetCustomizer()
+        };
+    </script>
+</body>
+</html>
