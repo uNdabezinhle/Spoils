@@ -10,7 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.conf import settings
 
-from .models import Address, User
+from .models import Address, DeviceToken, User
 from .serializers import AddressSerializer, RegisterSerializer, UserSerializer
 
 
@@ -175,3 +175,22 @@ def address_detail(request, pk):
     if address.is_default:
         Address.objects.filter(user=request.user).exclude(pk=address.pk).update(is_default=False)
     return Response(AddressSerializer(address).data)
+
+
+@api_view(["POST", "DELETE"])
+@permission_classes([IsAuthenticated])
+def device_token(request):
+    token = request.data.get("token", "").strip()
+    if not token:
+        return Response({"detail": "token is required."}, status=400)
+
+    if request.method == "DELETE":
+        DeviceToken.objects.filter(user=request.user, token=token).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    platform = request.data.get("platform", "android")
+    DeviceToken.objects.update_or_create(
+        token=token,
+        defaults={"user": request.user, "platform": platform},
+    )
+    return Response({"detail": "Device registered for notifications."}, status=status.HTTP_201_CREATED)

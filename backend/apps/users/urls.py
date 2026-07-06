@@ -12,4 +12,5 @@ urlpatterns = [
     path("password-reset/confirm/", views.password_reset_confirm, name="password-reset-confirm"),
     path("addresses/", views.address_list, name="address-list"),
     path("addresses/<int:pk>/", views.address_detail, name="address-detail"),
+    path("device-token/", views.device_token, name="device-token"),
 ]

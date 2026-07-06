@@ -24,3 +24,14 @@ class RecipientSerializer(serializers.ModelSerializer):
         for occasion_data in occasions_data:
             Occasion.objects.create(recipient=recipient, **occasion_data)
         return recipient
+
+    def update(self, instance, validated_data):
+        occasions_data = validated_data.pop("occasions", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if occasions_data is not None:
+            instance.occasions.all().delete()
+            for occasion_data in occasions_data:
+                Occasion.objects.create(recipient=instance, **occasion_data)
+        return instance

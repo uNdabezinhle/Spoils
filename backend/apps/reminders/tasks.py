@@ -4,6 +4,8 @@ from datetime import timedelta
 from celery import shared_task
 from django.utils import timezone
 
+from .services.notifications import send_push_notification, send_reminder_email
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,12 +26,30 @@ def send_due_reminders():
         ).exists()
         if already_sent:
             continue
+
+        user = occasion.recipient.user
+        days_until = (occasion.date - today).days
+        occasion_label = occasion.get_type_display()
+
+        send_reminder_email(
+            user=user,
+            recipient_name=occasion.recipient.name,
+            occasion_type=occasion_label,
+            occasion_date=occasion.date,
+            days_until=days_until,
+        )
+        send_push_notification(
+            user=user,
+            title=f"Spoil reminder: {occasion.recipient.name}",
+            body=f"Their {occasion_label.lower()} is in {days_until} days — time to find the perfect gift.",
+        )
+
         ReminderLog.objects.create(occasion=occasion, status="sent")
         logger.info(
             "Reminder sent for %s (%s) — user %s",
             occasion.recipient.name,
             occasion.type,
-            occasion.recipient.user.email,
+            user.email,
         )
         sent_count += 1
 
