@@ -9,6 +9,9 @@ import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/auth/screens/reset_password_screen.dart';
+import '../../features/cart/providers/cart_provider.dart';
+import '../../features/cart/screens/cart_screen.dart';
+import '../../features/cart/screens/personalise_screen.dart';
 import '../../features/catalog/screens/product_detail_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/orders/orders_screen.dart';
@@ -16,11 +19,18 @@ import '../../features/profile/profile_screen.dart';
 import '../../features/reminders/my_people_screen.dart';
 import '../../features/shop/shop_screen.dart';
 import '../../features/splash/splash_screen.dart';
+import '../theme/spoil_colors.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
-const _protectedPrefixes = ['/orders', '/people', '/profile/edit', '/profile/addresses'];
+const _protectedPrefixes = [
+  '/orders',
+  '/people',
+  '/profile/edit',
+  '/profile/addresses',
+  '/cart',
+];
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authNotifier = ref.watch(authProvider.notifier);
@@ -70,6 +80,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => ProductDetailScreen(slug: state.pathParameters['slug']!),
       ),
+      GoRoute(
+        path: '/personalise/:slug',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PersonaliseScreen(slug: state.pathParameters['slug']!),
+      ),
+      GoRoute(
+        path: '/cart',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CartScreen(),
+      ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
         builder: (context, state, child) => AppShell(child: child),
@@ -90,7 +110,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-class AppShell extends StatelessWidget {
+class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.child});
 
   final Widget child;
@@ -110,9 +130,22 @@ class AppShell extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cartCount = ref.watch(cartItemCountProvider);
+
     return Scaffold(
       body: child,
+      floatingActionButton: cartCount > 0
+          ? FloatingActionButton.extended(
+              onPressed: () => context.push('/cart'),
+              backgroundColor: SpoilColors.teal,
+              icon: Badge(
+                label: Text('$cartCount'),
+                child: const Icon(Icons.shopping_bag_outlined, color: Colors.white),
+              ),
+              label: const Text('Cart', style: TextStyle(color: Colors.white)),
+            )
+          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex(context),
         onDestinationSelected: (i) => _onTap(context, i),

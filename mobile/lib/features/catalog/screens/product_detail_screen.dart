@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/spoil_colors.dart';
 import '../../../shared/utils/currency_formatter.dart';
@@ -113,11 +114,7 @@ class ProductDetailScreen extends ConsumerWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Personalisation coming in Phase 4 — stay tuned!')),
-                          );
-                        },
+                        onPressed: () => context.push('/personalise/$slug'),
                         child: const Text('Personalise & add to cart'),
                       ),
                     ),
