@@ -150,7 +150,7 @@ class _PopiaScreenState extends ConsumerState<PopiaScreen> {
               padding: const EdgeInsets.all(16),
               child: Text(
                 'Under POPIA you have the right to access and delete your personal information. '
-                'Spoil stores only what we need to deliver gifts and send reminders.',
+                'Spoils stores only what we need to deliver gifts and send reminders.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
@@ -177,7 +177,7 @@ class _PopiaScreenState extends ConsumerState<PopiaScreen> {
           Text('Delete my account', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           Text(
-            'Permanently remove your account and all associated personal data from Spoil.',
+            'Permanently remove your account and all associated personal data from Spoils.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 12),

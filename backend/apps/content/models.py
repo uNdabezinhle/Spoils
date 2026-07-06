@@ -3,7 +3,7 @@ from django.db import models
 
 class StaticPage(models.Model):
     PAGE_TYPES = [
-        ("about", "About Spoil"),
+        ("about", "About Spoils"),
         ("terms", "Terms of Service"),
         ("privacy", "Privacy Policy"),
         ("how_it_works", "How It Works"),

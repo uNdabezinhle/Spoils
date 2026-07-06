@@ -22,7 +22,7 @@ def export_user_data(user) -> dict:
         "recipients": RecipientSerializer(recipients, many=True).data,
         "device_tokens_registered": user.device_tokens.count(),
         "popia_notice": (
-            "This export contains personal information held by Spoil in accordance with POPIA. "
+            "This export contains personal information held by Spoils in accordance with POPIA. "
             "Keep it secure and do not share it unnecessarily."
         ),
     }

@@ -66,7 +66,7 @@ void main() {
     await tester.tap(partner.first);
     await tester.pumpAndSettle(const Duration(seconds: 3));
     expect(find.text('Gift suggestions'), findsOneWidget);
-    expect(find.text('Spoil reminder'), findsOneWidget);
+    expect(find.text('Spoils reminder'), findsOneWidget);
   });
 
   testWidgets('post-MVP: calendar tab opens occasion detail', (tester) async {

@@ -20,7 +20,7 @@ class OccasionDetailScreen extends ConsumerWidget {
     final suggestionsAsync = ref.watch(occasionSuggestionsProvider(occasionId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Spoil reminder')),
+      appBar: AppBar(title: const Text('Spoils reminder')),
       body: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: SpoilColors.teal)),
         error: (e, _) => Center(child: Text('Could not load occasion.\n$e')),

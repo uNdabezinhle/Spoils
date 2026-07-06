@@ -194,10 +194,10 @@ def password_reset_request(request):
     reset_path = f"/auth/reset-password?uid={uid}&token={token}"
 
     send_mail(
-        subject="Reset your Spoil password",
+        subject="Reset your Spoils password",
         message=(
             f"Hi {user.first_name or 'there'},\n\n"
-            f"We received a request to reset your Spoil password.\n\n"
+            f"We received a request to reset your Spoils password.\n\n"
             f"Use this link in the app: {reset_path}\n\n"
             f"Or use uid={uid} and token={token} in the reset form.\n\n"
             f"If you didn't request this, you can safely ignore this email.\n\n"

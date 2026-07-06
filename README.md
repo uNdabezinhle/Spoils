@@ -1,8 +1,10 @@
-# Spoil
+# Spoils
 
 **Spoil them properly.**
 
 South Africa's modern gift shop — Flutter mobile app + Django REST API.
+
+**Repository:** https://github.com/uNdabezinhle/Spoils
 
 ## MVP status
 
@@ -18,6 +20,18 @@ All eight MVP phases are implemented on `main`:
 | 6 | My People & occasion reminders |
 | 7 | Content pages & POPIA |
 | 8 | Admin polish & launch readiness |
+
+## Post-MVP features
+
+| Feature | Backend | Mobile |
+|---------|---------|--------|
+| Occasion detail & gift suggestions | ✅ | ✅ |
+| Snooze / skip reminders | ✅ | ✅ |
+| People calendar | ✅ | ✅ |
+| Subscriptions (plans, subscribe, cancel) | ✅ | ✅ |
+| Staff analytics API + admin dashboard | ✅ | — (admin web) |
+| Social login (Google / Apple) | ✅ | ✅ (needs OAuth IDs) |
+| Profile photo upload | ✅ | ✅ |
 
 ## Quick start
 
@@ -47,6 +61,7 @@ docker compose exec api python manage.py createsuperuser
 |---------|-----|
 | API health | http://localhost:8000/api/health/ |
 | Django Admin | http://localhost:8000/admin/ |
+| Analytics dashboard | http://localhost:8000/admin/analytics/ |
 | API base | http://localhost:8000/api/v1/ |
 
 ### 3. Mobile (Flutter)
@@ -57,21 +72,34 @@ flutter pub get
 flutter run
 ```
 
-Android emulator uses `http://10.0.2.2:8000/api/v1` by default. For a physical device:
+Android emulator uses `http://10.0.2.2:8000/api/v1` by default. For Chrome or a physical device:
 
 ```bash
+flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8000/api/v1
 flutter run --dart-define=API_BASE_URL=http://192.168.1.x:8000/api/v1
 ```
 
-### 4. Smoke tests
+### 4. Tests
 
-Verify the API before launch:
+**API smoke tests (18):**
 
 ```bash
 cd backend
 python manage.py test spoil.tests.test_api_smoke
-# or
-python manage.py smoke_check
+```
+
+**Mobile widget tests:**
+
+```bash
+cd mobile
+flutter test test/post_mvp_screens_test.dart
+```
+
+**Device integration tests** (Android emulator or Windows + Visual Studio Build Tools):
+
+```bash
+flutter test integration_test/post_mvp_flows_test.dart -d <device> \
+  --dart-define=API_BASE_URL=http://localhost:8000/api/v1
 ```
 
 Inside Docker:
@@ -86,26 +114,29 @@ docker compose exec api python manage.py smoke_check
 2. **Personalise** — Add message, photo, wrapping → add to cart
 3. **Checkout** — Address, delivery date, promo `SPOIL10` → pay (demo or Paystack)
 4. **Track** — Orders tab → status stepper, receipt, reorder
-5. **My People** — Add birthdays/anniversaries with POPIA consent
-6. **Profile** — How it works, Privacy & Terms, export/delete data (POPIA)
+5. **My People** — Add birthdays/anniversaries with POPIA consent; calendar & occasion detail
+6. **Subscriptions** — Profile → monthly spoil plans
+7. **Profile** — How it works, Privacy & Terms, export/delete data (POPIA)
 
 ## Django Admin
 
 Sign in at `/admin/` with your superuser. Key workflows:
 
-- **Orders** — Filter by status; use bulk actions: Processing → Shipped → Delivered
+- **Analytics** — Live overview at `/admin/analytics/` (revenue, orders, people, subscriptions)
+- **Orders** — Filter by status; bulk actions: Processing → Shipped → Delivered
 - **Products** — Toggle featured/popular/active inline; manage categories and wrapping
 - **Content** — Edit FAQs and static pages (Privacy, Terms, How it Works)
 - **Reminders** — View recipients, occasions, and reminder send logs
+- **Subscriptions** — Plans and subscriber management
 - **Users** — Profiles, addresses, device tokens
 
-Admin branding: **Spoil Admin** — *Spoil them properly — gift operations*.
+Admin branding: **Spoils Admin** — *Spoil them properly — gift operations*.
 
 ## Project structure
 
 ```
-Spoil/
-├── backend/          Django 5 + DRF (users, products, orders, reminders, content)
+Spoils/
+├── backend/          Django 5 + DRF (users, products, orders, reminders, subscriptions, content)
 ├── mobile/           Flutter + Riverpod + go_router
 ├── docker-compose.yml
 ├── .env.example
@@ -122,6 +153,7 @@ Spoil/
 | `PAYSTACK_SECRET_KEY` | Empty = demo checkout; set for Paystack |
 | `CLOUDINARY_*` | Photo uploads; falls back to local `media/` in DEBUG |
 | `FIREBASE_CREDENTIALS_PATH` | FCM push (optional; logs stub when empty) |
+| `GOOGLE_OAUTH_CLIENT_ID` / `APPLE_CLIENT_ID` | Social login (optional) |
 | `EMAIL_HOST` | SMTP; console backend when unset |
 
 ## Branch workflow
@@ -130,4 +162,4 @@ Each phase was developed on `phase/N-*` and merged to `main`. For new work, bran
 
 ## Core journey
 
-Discover → Personalise → Purchase → Receive
+Discover → Personalise → Purchase → Receive → Remember → Subscribe

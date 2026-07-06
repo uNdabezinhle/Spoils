@@ -14,7 +14,7 @@ class LegalHubScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         children: [
           Text(
-            'Your trust matters to us. Spoil is built POPIA-first — your data stays yours.',
+            'Your trust matters to us. Spoils is built POPIA-first — your data stays yours.',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: 20),
@@ -37,7 +37,7 @@ class LegalHubScreen extends StatelessWidget {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.info_outline, color: SpoilColors.teal),
-                  title: const Text('About Spoil'),
+                  title: const Text('About Spoils'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/content/about'),
                 ),

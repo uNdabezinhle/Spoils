@@ -70,7 +70,7 @@ class HomeScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Spoil reminders', style: Theme.of(context).textTheme.titleMedium),
+                        Text('Spoils reminders', style: Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 12),
                         ...reminders.take(3).map((r) => _InAppReminderCard(reminder: r)),
                       ],

@@ -146,10 +146,10 @@ def _send_confirmation_email(order: Order) -> None:
         f"Total: R{order.total_amount}\n\n"
         f"Items:\n" + "\n".join(lines) + "\n\n"
         f"We'll keep you updated as your gift makes its way.\n\n"
-        f"Spoil them properly.\n— The Spoil Team"
+        f"Spoil them properly.\n— The Spoils Team"
     )
     send_mail(
-        subject=f"Order #{order.id} confirmed — Spoil",
+        subject=f"Order #{order.id} confirmed — Spoils",
         message=body,
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user.email],

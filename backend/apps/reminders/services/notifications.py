@@ -7,14 +7,14 @@ logger = logging.getLogger(__name__)
 
 
 def send_reminder_email(*, user, recipient_name: str, occasion_type: str, occasion_date, days_until: int) -> None:
-    subject = f"Time to spoil {recipient_name} — Spoil reminder"
+    subject = f"Time to spoil {recipient_name} — Spoils reminder"
     body = (
         f"Hi {user.first_name or 'there'},\n\n"
         f"{recipient_name}'s {occasion_type} is coming up on {occasion_date} "
         f"({days_until} day{'s' if days_until != 1 else ''} away).\n\n"
         f"You've still got time to find something thoughtful and spoil them properly.\n"
-        f"Open the Spoil app to browse gifts.\n\n"
-        f"Spoil them properly.\n— The Spoil Team"
+        f"Open the Spoils app to browse gifts.\n\n"
+        f"Spoil them properly.\n— The Spoils Team"
     )
     send_mail(
         subject=subject,

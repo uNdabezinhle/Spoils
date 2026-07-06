@@ -12,7 +12,7 @@ class UserAdmin(BaseUserAdmin):
     ordering = ("-created_at",)
     readonly_fields = ("created_at", "updated_at", "last_login", "date_joined")
     fieldsets = BaseUserAdmin.fieldsets + (
-        ("Spoil profile", {"fields": ("phone", "avatar_url", "created_at", "updated_at")}),
+        ("Spoils profile", {"fields": ("phone", "avatar_url", "created_at", "updated_at")}),
     )
 
 

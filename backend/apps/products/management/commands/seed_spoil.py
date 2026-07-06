@@ -10,11 +10,11 @@ from apps.products.models import Category, MessageTemplate, Product, WrappingOpt
 
 
 class Command(BaseCommand):
-    help = "Seed Spoil with categories, products, wrapping options, and content."
+    help = "Seed Spoils with categories, products, wrapping options, and content."
 
     @transaction.atomic
     def handle(self, *args, **options):
-        self.stdout.write("Seeding Spoil catalogue…")
+        self.stdout.write("Seeding Spoils catalogue…")
 
         categories_data = [
             ("flowers", "Flowers", "Fresh, beautiful bouquets for every occasion.", 1),
@@ -132,7 +132,7 @@ class Command(BaseCommand):
         pages = [
             ("about", "About Spoils", "Spoils is South Africa's modern gift shop. We help you spoil the people who matter most — beautifully and effortlessly."),
             ("how_it_works", "How It Works", "1. Browse our curated gifts\n2. Personalise with a message or photo\n3. Choose delivery date and address\n4. We wrap it beautifully and deliver with care"),
-            ("terms", "Terms of Service", "By using Spoil you agree to our terms. Orders are subject to product availability and delivery conditions."),
+            ("terms", "Terms of Service", "By using Spoils you agree to our terms. Orders are subject to product availability and delivery conditions."),
             ("privacy", "Privacy Policy", "We respect your privacy and comply with POPIA. Your data is stored securely and never sold to third parties."),
         ]
         for page_type, title, content in pages:

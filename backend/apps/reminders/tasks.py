@@ -49,7 +49,7 @@ def send_due_reminders():
         )
         send_push_notification(
             user=user,
-            title=f"Spoil reminder: {occasion.recipient.name}",
+            title=f"Spoils reminder: {occasion.recipient.name}",
             body=f"Their {occasion_label.lower()} is in {days_until} days — time to find the perfect gift.",
         )
 

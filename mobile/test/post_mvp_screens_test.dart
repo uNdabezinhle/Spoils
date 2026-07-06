@@ -47,7 +47,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Spoil reminder'), findsOneWidget);
+    expect(find.text('Spoils reminder'), findsOneWidget);
     expect(find.text('Gift suggestions'), findsOneWidget);
     expect(find.text("Test Partner's Birthday"), findsOneWidget);
     expect(find.text('Spring Bloom'), findsOneWidget);
