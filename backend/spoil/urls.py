@@ -4,6 +4,8 @@ from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
 
+from . import admin as spoil_admin  # noqa: F401 — registers site branding
+
 
 def health_check(_request):
     return JsonResponse({"status": "ok", "app": "Spoil", "tagline": "Spoil them properly."})
