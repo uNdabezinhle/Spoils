@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import Address, DeviceToken, User
+from .models import Address, DeviceToken, SocialAccount, User
 
 
 @admin.register(User)
@@ -12,7 +12,7 @@ class UserAdmin(BaseUserAdmin):
     ordering = ("-created_at",)
     readonly_fields = ("created_at", "updated_at", "last_login", "date_joined")
     fieldsets = BaseUserAdmin.fieldsets + (
-        ("Spoil profile", {"fields": ("phone", "created_at", "updated_at")}),
+        ("Spoil profile", {"fields": ("phone", "avatar_url", "created_at", "updated_at")}),
     )
 
 
@@ -21,6 +21,13 @@ class AddressAdmin(admin.ModelAdmin):
     list_display = ("user", "label", "recipient_name", "city", "province", "is_default")
     list_filter = ("province", "is_default")
     search_fields = ("user__email", "recipient_name", "city", "street_address")
+
+
+@admin.register(SocialAccount)
+class SocialAccountAdmin(admin.ModelAdmin):
+    list_display = ("user", "provider", "uid", "created_at")
+    search_fields = ("user__email", "uid")
+    list_filter = ("provider",)
 
 
 @admin.register(DeviceToken)

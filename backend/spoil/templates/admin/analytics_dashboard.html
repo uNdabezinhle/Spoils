@@ -1,0 +1,119 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  .spoil-analytics { max-width: 1100px; }
+  .spoil-analytics h1 { margin-bottom: 8px; }
+  .spoil-analytics .subtitle { color: #666; margin-bottom: 24px; }
+  .spoil-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .spoil-stat-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  }
+  .spoil-stat-card .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #666;
+    margin-bottom: 6px;
+  }
+  .spoil-stat-card .value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a5c5c;
+    line-height: 1.1;
+  }
+  .spoil-stat-card .value.revenue { font-size: 22px; }
+  #content-main table.spoil-top-products { width: 100%; }
+  #content-main table.spoil-top-products th { text-align: left; }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="spoil-analytics">
+  <h1>{{ title }}</h1>
+  <p class="subtitle">Live snapshot from orders, people, subscriptions, and catalogue.</p>
+
+  <div class="spoil-stat-grid">
+    <div class="spoil-stat-card">
+      <div class="label">Users</div>
+      <div class="value">{{ overview.users_total }}</div>
+    </div>
+    <div class="spoil-stat-card">
+      <div class="label">Orders (paid)</div>
+      <div class="value">{{ overview.orders_paid }}<span style="font-size:14px;font-weight:400;color:#888"> / {{ overview.orders_total }}</span></div>
+    </div>
+    <div class="spoil-stat-card">
+      <div class="label">Revenue (paid)</div>
+      <div class="value revenue">R{{ overview.revenue_total }}</div>
+    </div>
+    <div class="spoil-stat-card">
+      <div class="label">Recipients</div>
+      <div class="value">{{ overview.recipients_total }}</div>
+    </div>
+    <div class="spoil-stat-card">
+      <div class="label">Active occasions</div>
+      <div class="value">{{ overview.occasions_active }}</div>
+    </div>
+    <div class="spoil-stat-card">
+      <div class="label">Active subscriptions</div>
+      <div class="value">{{ overview.subscriptions_active }}</div>
+    </div>
+    <div class="spoil-stat-card">
+      <div class="label">Active products</div>
+      <div class="value">{{ overview.products_active }}</div>
+    </div>
+  </div>
+
+  <div class="module">
+    <h2>Top products (by quantity sold)</h2>
+    {% if overview.top_products %}
+    <table class="spoil-top-products">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Slug</th>
+          <th>Qty</th>
+          <th>Revenue</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in overview.top_products %}
+        <tr>
+          <td><strong>{{ row.name }}</strong></td>
+          <td><code>{{ row.slug }}</code></td>
+          <td>{{ row.quantity }}</td>
+          <td>R{{ row.revenue }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No paid order line items yet. Completed checkouts will appear here.</p>
+    {% endif %}
+  </div>
+
+  <p style="margin-top:24px;color:#888;font-size:12px;">
+    JSON API: <code>/api/v1/analytics/overview/</code> (staff JWT or session required)
+  </p>
+</div>
+{% endblock %}

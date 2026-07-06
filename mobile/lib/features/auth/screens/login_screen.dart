@@ -6,6 +6,7 @@ import '../../../core/constants/brand_constants.dart';
 import '../../../core/theme/spoil_colors.dart';
 import '../../../core/theme/spoil_decorations.dart';
 import '../../../shared/widgets/auth_gradient_header.dart';
+import '../../../shared/widgets/social_sign_in_buttons.dart';
 import '../../../shared/widgets/spoil_text_field.dart';
 import '../providers/auth_provider.dart';
 
@@ -118,6 +119,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                 )
                               : const Text('Sign in'),
+                        ),
+                        const SizedBox(height: 16),
+                        SocialSignInButtons(
+                          onSuccess: () => context.go(widget.redirect ?? '/home'),
                         ),
                         const SizedBox(height: 12),
                         Row(

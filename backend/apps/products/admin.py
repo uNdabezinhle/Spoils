@@ -17,18 +17,19 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = (
         "name",
         "category",
+        "occasion",
         "base_price",
         "is_featured",
         "is_popular",
         "is_active",
     )
     list_editable = ("is_featured", "is_popular", "is_active")
-    list_filter = ("category", "is_featured", "is_popular", "is_active")
+    list_filter = ("category", "occasion", "is_featured", "is_popular", "is_active")
     search_fields = ("name", "description", "slug")
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("created_at",)
     fieldsets = (
-        (None, {"fields": ("name", "slug", "category", "description", "base_price", "image_url", "delivery_info")}),
+        (None, {"fields": ("name", "slug", "category", "occasion", "description", "base_price", "image_url", "delivery_info")}),
         ("Visibility", {"fields": ("is_featured", "is_popular", "is_active")}),
         ("Timestamps", {"fields": ("created_at",)}),
     )

@@ -55,6 +55,7 @@ Thumbs.db
 
 # MCP (local tooling)
 mcps/
+agent-tools/
 
 # Docker
 *.pid

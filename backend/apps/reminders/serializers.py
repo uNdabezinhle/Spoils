@@ -4,10 +4,11 @@ from .models import Occasion, Recipient
 
 
 class OccasionSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False, allow_null=True)
+
     class Meta:
         model = Occasion
-        fields = ("id", "type", "date", "reminder_days_before", "notes", "is_active")
-        read_only_fields = ("id",)
+        fields = ("id", "type", "date", "reminder_days_before", "notes", "is_active", "snoozed_until")
 
 
 class RecipientSerializer(serializers.ModelSerializer):
@@ -31,7 +32,18 @@ class RecipientSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         if occasions_data is not None:
-            instance.occasions.all().delete()
+            kept_ids = []
             for occasion_data in occasions_data:
-                Occasion.objects.create(recipient=instance, **occasion_data)
+                occasion_id = occasion_data.pop("id", None)
+                if occasion_id:
+                    occasion = instance.occasions.filter(pk=occasion_id).first()
+                    if occasion:
+                        for attr, value in occasion_data.items():
+                            setattr(occasion, attr, value)
+                        occasion.save()
+                        kept_ids.append(occasion.id)
+                        continue
+                occasion = Occasion.objects.create(recipient=instance, **occasion_data)
+                kept_ids.append(occasion.id)
+            instance.occasions.exclude(pk__in=kept_ids).delete()
         return instance

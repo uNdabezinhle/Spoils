@@ -32,6 +32,7 @@ class Occasion(models.Model):
     reminder_days_before = models.PositiveIntegerField(default=14, choices=REMINDER_DAYS)
     notes = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
+    snoozed_until = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -39,9 +40,25 @@ class Occasion(models.Model):
 
 
 class ReminderLog(models.Model):
+    STATUS_CHOICES = [
+        ("sent", "Sent"),
+        ("opened", "Opened"),
+        ("acted_on", "Acted on"),
+        ("snoozed", "Snoozed"),
+        ("skipped", "Skipped"),
+    ]
+
     occasion = models.ForeignKey(Occasion, on_delete=models.CASCADE, related_name="logs")
     sent_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, default="sent")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="sent")
+    skip_year = models.PositiveIntegerField(null=True, blank=True)
+    chosen_product = models.ForeignKey(
+        "products.Product",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reminder_picks",
+    )
 
     class Meta:
         ordering = ["-sent_at"]

@@ -9,9 +9,10 @@ import '../catalog/data/catalog_repository.dart';
 import '../catalog/providers/catalog_provider.dart';
 
 class ShopScreen extends ConsumerStatefulWidget {
-  const ShopScreen({super.key, this.initialCategory});
+  const ShopScreen({super.key, this.initialCategory, this.initialOccasion});
 
   final String? initialCategory;
+  final String? initialOccasion;
 
   @override
   ConsumerState<ShopScreen> createState() => _ShopScreenState();
@@ -24,10 +25,11 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.initialCategory != null) {
+    if (widget.initialCategory != null || widget.initialOccasion != null) {
       Future.microtask(() {
         ref.read(productFiltersProvider.notifier).state = ProductFilters(
           categorySlug: widget.initialCategory,
+          occasion: widget.initialOccasion,
         );
       });
     }
@@ -48,6 +50,13 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
     ref.read(productFiltersProvider.notifier).state = ref.read(productFiltersProvider).copyWith(
           categorySlug: slug,
           clearCategory: slug == null,
+        );
+  }
+
+  void _selectOccasion(String? occasion) {
+    ref.read(productFiltersProvider.notifier).state = ref.read(productFiltersProvider).copyWith(
+          occasion: occasion,
+          clearOccasion: occasion == null,
         );
   }
 
@@ -144,6 +153,41 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
                 ),
               ],
             ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 40,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            children: [
+              _PriceChip(
+                label: 'All occasions',
+                selected: filters.occasion == null,
+                onTap: () => _selectOccasion(null),
+              ),
+              _PriceChip(
+                label: 'Birthday',
+                selected: filters.occasion == 'birthday',
+                onTap: () => _selectOccasion('birthday'),
+              ),
+              _PriceChip(
+                label: 'Anniversary',
+                selected: filters.occasion == 'anniversary',
+                onTap: () => _selectOccasion('anniversary'),
+              ),
+              _PriceChip(
+                label: 'Thank you',
+                selected: filters.occasion == 'thank_you',
+                onTap: () => _selectOccasion('thank_you'),
+              ),
+              _PriceChip(
+                label: 'Just because',
+                selected: filters.occasion == 'just_because',
+                onTap: () => _selectOccasion('just_because'),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 8),

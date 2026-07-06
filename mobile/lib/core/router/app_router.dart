@@ -25,7 +25,9 @@ import '../../features/content/screens/static_page_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/profile/screens/popia_screen.dart';
 import '../../features/reminders/my_people_screen.dart';
+import '../../features/reminders/screens/occasion_detail_screen.dart';
 import '../../features/shop/shop_screen.dart';
+import '../../features/subscriptions/screens/subscriptions_screen.dart';
 import '../../features/splash/splash_screen.dart';
 import '../theme/spoil_colors.dart';
 import '../theme/spoil_decorations.dart';
@@ -41,6 +43,7 @@ const _protectedPrefixes = [
   '/profile/addresses',
   '/profile/data',
   '/cart',
+  '/subscriptions',
 ];
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -137,6 +140,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           orderId: int.parse(state.pathParameters['id']!),
         ),
       ),
+      GoRoute(
+        path: '/people/occasion/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => OccasionDetailScreen(
+          occasionId: int.parse(state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/subscriptions',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SubscriptionsScreen(),
+      ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
         builder: (context, state, child) => AppShell(child: child),
@@ -144,7 +159,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
           GoRoute(
             path: '/shop',
-            builder: (context, state) => ShopScreen(initialCategory: state.uri.queryParameters['category']),
+            builder: (context, state) => ShopScreen(
+              initialCategory: state.uri.queryParameters['category'],
+              initialOccasion: state.uri.queryParameters['occasion'],
+            ),
           ),
           GoRoute(path: '/people', builder: (context, state) => const MyPeopleScreen()),
           GoRoute(path: '/orders', builder: (context, state) => const OrdersScreen()),

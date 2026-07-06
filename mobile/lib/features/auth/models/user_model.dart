@@ -5,6 +5,7 @@ class UserModel {
     required this.firstName,
     required this.lastName,
     required this.phone,
+    this.avatarUrl = '',
     this.dateJoined,
   });
 
@@ -13,6 +14,7 @@ class UserModel {
   final String firstName;
   final String lastName;
   final String phone;
+  final String avatarUrl;
   final String? dateJoined;
 
   String get displayName {
@@ -27,6 +29,7 @@ class UserModel {
       firstName: json['first_name'] as String? ?? '',
       lastName: json['last_name'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
+      avatarUrl: json['avatar_url'] as String? ?? '',
       dateJoined: json['date_joined'] as String?,
     );
   }
@@ -35,12 +38,14 @@ class UserModel {
         'first_name': firstName,
         'last_name': lastName,
         'phone': phone,
+        if (avatarUrl.isNotEmpty) 'avatar_url': avatarUrl,
       };
 
   UserModel copyWith({
     String? firstName,
     String? lastName,
     String? phone,
+    String? avatarUrl,
   }) {
     return UserModel(
       id: id,
@@ -48,6 +53,7 @@ class UserModel {
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       phone: phone ?? this.phone,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
       dateJoined: dateJoined,
     );
   }

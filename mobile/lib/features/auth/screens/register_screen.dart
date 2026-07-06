@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/brand_constants.dart';
 import '../../../core/theme/spoil_decorations.dart';
 import '../../../shared/widgets/auth_gradient_header.dart';
+import '../../../shared/widgets/social_sign_in_buttons.dart';
 import '../../../shared/widgets/spoil_text_field.dart';
 import '../providers/auth_provider.dart';
 
@@ -137,6 +138,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 )
                               : const Text('Create account'),
                         ),
+                        const SizedBox(height: 8),
+                        SocialSignInButtons(onSuccess: () => context.go('/home')),
                         TextButton(
                           onPressed: () => context.pop(),
                           child: const Text('Already have an account? Sign in'),

@@ -16,8 +16,17 @@ def send_due_reminders():
     today = timezone.localdate()
     sent_count = 0
 
+    from .utils import next_occurrence_on
+
     for occasion in Occasion.objects.filter(is_active=True).select_related("recipient", "recipient__user"):
-        reminder_date = occasion.date - timedelta(days=occasion.reminder_days_before)
+        if occasion.snoozed_until and today <= occasion.snoozed_until:
+            continue
+
+        next_date = next_occurrence_on(occasion.date, today=today)
+        if ReminderLog.objects.filter(occasion=occasion, status="skipped", skip_year=next_date.year).exists():
+            continue
+
+        reminder_date = next_date - timedelta(days=occasion.reminder_days_before)
         if reminder_date != today:
             continue
         already_sent = ReminderLog.objects.filter(
@@ -28,14 +37,14 @@ def send_due_reminders():
             continue
 
         user = occasion.recipient.user
-        days_until = (occasion.date - today).days
+        days_until = (next_date - today).days
         occasion_label = occasion.get_type_display()
 
         send_reminder_email(
             user=user,
             recipient_name=occasion.recipient.name,
             occasion_type=occasion_label,
-            occasion_date=occasion.date,
+            occasion_date=next_date,
             days_until=days_until,
         )
         send_push_notification(

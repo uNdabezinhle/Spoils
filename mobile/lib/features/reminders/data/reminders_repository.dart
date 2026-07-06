@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../catalog/models/product_model.dart';
 import '../models/recipient_model.dart';
 
 final remindersRepositoryProvider = Provider<RemindersRepository>((ref) {
@@ -17,6 +18,41 @@ class RemindersRepository {
     final response = await _dio.get('/reminders/recipients/');
     return (response.data as List<dynamic>)
         .map((e) => RecipientModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<OccasionDetailModel> fetchOccasionDetail(int id) async {
+    final response = await _dio.get('/reminders/occasions/$id/');
+    return OccasionDetailModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<List<ProductModel>> fetchOccasionSuggestions(int id) async {
+    final response = await _dio.get('/reminders/occasions/$id/suggestions/');
+    final data = response.data as Map<String, dynamic>;
+    return (data['products'] as List<dynamic>)
+        .map((e) => ProductModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<bool> snoozeOccasion(int id, {int days = 3}) async {
+    await _dio.post('/reminders/occasions/$id/snooze/', data: {'days': days});
+    return true;
+  }
+
+  Future<bool> skipOccasion(int id) async {
+    await _dio.post('/reminders/occasions/$id/skip/');
+    return true;
+  }
+
+  Future<CalendarMonthModel> fetchCalendar({required int year, required int month}) async {
+    final response = await _dio.get('/reminders/calendar/', queryParameters: {'year': year, 'month': month});
+    return CalendarMonthModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<List<InAppReminderModel>> fetchInAppReminders() async {
+    final response = await _dio.get('/reminders/in-app/');
+    return (response.data as List<dynamic>)
+        .map((e) => InAppReminderModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 

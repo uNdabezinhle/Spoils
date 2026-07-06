@@ -70,6 +70,32 @@ class AuthRepository {
     return UserModel.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<UserModel> uploadAvatar(String filePath) async {
+    final response = await _dio.post(
+      '/auth/me/avatar/',
+      data: FormData.fromMap({
+        'photo': await MultipartFile.fromFile(filePath, filename: 'avatar.jpg'),
+      }),
+    );
+    final data = response.data as Map<String, dynamic>;
+    return UserModel.fromJson(data['user'] as Map<String, dynamic>);
+  }
+
+  Future<({UserModel user, AuthTokens tokens})> socialLogin({
+    required String provider,
+    required String idToken,
+    String firstName = '',
+    String lastName = '',
+  }) async {
+    final path = provider == 'apple' ? '/auth/apple/' : '/auth/google/';
+    final response = await _dio.post(path, data: {
+      'id_token': idToken,
+      if (firstName.isNotEmpty) 'first_name': firstName,
+      if (lastName.isNotEmpty) 'last_name': lastName,
+    });
+    return _parseAuthResponse(response.data as Map<String, dynamic>);
+  }
+
   Future<void> requestPasswordReset(String email) async {
     await _dio.post('/auth/password-reset/', data: {'email': email});
   }
@@ -113,6 +139,10 @@ class AuthRepository {
 
   Future<void> deleteMyAccount(String password) async {
     await _dio.post('/auth/me/delete/', data: {'password': password});
+  }
+
+  Future<void> registerDeviceToken({required String token, String platform = 'web'}) async {
+    await _dio.post('/auth/device-token/', data: {'token': token, 'platform': platform});
   }
 
   Future<void> logout() async {

@@ -23,6 +23,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "image_url",
             "category_name",
             "category_slug",
+            "occasion",
             "is_featured",
             "is_popular",
         )
@@ -42,6 +43,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "image_url",
             "delivery_info",
             "category",
+            "occasion",
             "is_featured",
             "is_popular",
         )

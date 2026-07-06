@@ -25,6 +25,7 @@ class ProductFilters {
   const ProductFilters({
     this.search = '',
     this.categorySlug,
+    this.occasion,
     this.minPrice,
     this.maxPrice,
     this.featuredOnly = false,
@@ -33,6 +34,7 @@ class ProductFilters {
 
   final String search;
   final String? categorySlug;
+  final String? occasion;
   final double? minPrice;
   final double? maxPrice;
   final bool featuredOnly;
@@ -41,17 +43,20 @@ class ProductFilters {
   ProductFilters copyWith({
     String? search,
     String? categorySlug,
+    String? occasion,
     double? minPrice,
     double? maxPrice,
     bool? featuredOnly,
     bool? popularOnly,
     bool clearCategory = false,
+    bool clearOccasion = false,
     bool clearMinPrice = false,
     bool clearMaxPrice = false,
   }) {
     return ProductFilters(
       search: search ?? this.search,
       categorySlug: clearCategory ? null : (categorySlug ?? this.categorySlug),
+      occasion: clearOccasion ? null : (occasion ?? this.occasion),
       minPrice: clearMinPrice ? null : (minPrice ?? this.minPrice),
       maxPrice: clearMaxPrice ? null : (maxPrice ?? this.maxPrice),
       featuredOnly: featuredOnly ?? this.featuredOnly,
@@ -92,6 +97,7 @@ class CatalogRepository {
     final params = <String, dynamic>{};
     if (filters.search.isNotEmpty) params['search'] = filters.search;
     if (filters.categorySlug != null) params['category'] = filters.categorySlug;
+    if (filters.occasion != null) params['occasion'] = filters.occasion;
     if (filters.minPrice != null) params['min_price'] = filters.minPrice!.toStringAsFixed(0);
     if (filters.maxPrice != null) params['max_price'] = filters.maxPrice!.toStringAsFixed(0);
     if (filters.featuredOnly) params['featured'] = 'true';

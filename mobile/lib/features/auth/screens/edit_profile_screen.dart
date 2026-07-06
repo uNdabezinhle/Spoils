@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../../shared/widgets/profile_avatar.dart';
 import '../../../shared/widgets/spoil_text_field.dart';
 import '../providers/auth_provider.dart';
 
@@ -17,6 +19,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
   late final TextEditingController _phoneController;
+  bool _uploadingAvatar = false;
 
   @override
   void initState() {
@@ -33,6 +36,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _lastNameController.dispose();
     _phoneController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAvatar() async {
+    final image = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1200, imageQuality: 85);
+    if (image == null) return;
+    setState(() => _uploadingAvatar = true);
+    final ok = await ref.read(authProvider.notifier).uploadAvatar(image.path);
+    if (mounted) {
+      setState(() => _uploadingAvatar = false);
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not upload photo. Try again.')),
+        );
+      }
+    }
   }
 
   Future<void> _save() async {
@@ -53,6 +71,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
+    final user = auth.user!;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Edit profile')),
@@ -62,6 +81,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           key: _formKey,
           child: Column(
             children: [
+              Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  ProfileAvatar(name: user.displayName, avatarUrl: user.avatarUrl, radius: 44),
+                  IconButton.filled(
+                    onPressed: _uploadingAvatar ? null : _pickAvatar,
+                    icon: _uploadingAvatar
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.camera_alt_outlined, size: 18),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text('Tap to update your photo', style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: 24),
               if (auth.error != null) Text(auth.error!, style: const TextStyle(color: Colors.redAccent)),
               SpoilTextField(controller: _firstNameController, label: 'First name'),
               const SizedBox(height: 16),

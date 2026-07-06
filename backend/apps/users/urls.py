@@ -5,6 +5,9 @@ from . import views
 urlpatterns = [
     path("register/", views.register, name="register"),
     path("login/", views.login, name="login"),
+    path("google/", views.google_login, name="google-login"),
+    path("apple/", views.apple_login, name="apple-login"),
+    path("me/avatar/", views.upload_avatar, name="upload-avatar"),
     path("refresh/", views.refresh_token, name="refresh"),
     path("logout/", views.logout, name="logout"),
     path("me/export/", views.me_export, name="me-export"),

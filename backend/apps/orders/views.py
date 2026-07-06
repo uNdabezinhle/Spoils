@@ -21,7 +21,7 @@ from .services.checkout import (
     mark_order_paid,
     reorder_to_cart,
 )
-from .services.paystack import PaystackError, is_demo_mode, verify_transaction
+from .services.paystack import PaystackError, is_demo_mode, verify_transaction, verify_webhook_signature
 
 
 def _get_cart(user):
@@ -214,6 +214,10 @@ def checkout_verify(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def paystack_webhook(request):
+    signature = request.headers.get("x-paystack-signature", "")
+    if not verify_webhook_signature(payload=request.body, signature=signature):
+        return Response({"detail": "Invalid signature."}, status=401)
+
     event = request.data.get("event")
     data = request.data.get("data", {})
     if event == "charge.success":

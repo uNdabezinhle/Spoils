@@ -21,6 +21,8 @@ final apiClientProvider = Provider<Dio>((ref) {
         final access = await tokenStorage.getAccessToken();
         final isPublicAuth = options.path.contains('/auth/login') ||
             options.path.contains('/auth/register') ||
+            options.path.contains('/auth/google') ||
+            options.path.contains('/auth/apple') ||
             options.path.contains('/auth/refresh') ||
             options.path.contains('/auth/password-reset');
         if (access != null && !isPublicAuth) {

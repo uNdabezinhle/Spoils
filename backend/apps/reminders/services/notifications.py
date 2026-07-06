@@ -27,18 +27,9 @@ def send_reminder_email(*, user, recipient_name: str, occasion_type: str, occasi
 
 def send_push_notification(*, user, title: str, body: str) -> int:
     """Send FCM push when credentials are configured; otherwise log only."""
+    from spoil.services.push import send_fcm_to_tokens
+
     tokens = list(user.device_tokens.values_list("token", flat=True))
     if not tokens:
         return 0
-
-    if not settings.FIREBASE_CREDENTIALS_PATH:
-        logger.info("FCM stub — would push to %s: %s / %s", user.email, title, body)
-        return 0
-
-    try:
-        # Production hook: integrate firebase_admin when credentials are present.
-        logger.info("FCM push queued for %s (%d device(s))", user.email, len(tokens))
-        return len(tokens)
-    except Exception:
-        logger.exception("FCM push failed for %s", user.email)
-        return 0
+    return send_fcm_to_tokens(tokens=tokens, title=title, body=body)

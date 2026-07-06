@@ -4,6 +4,7 @@ from django.db import models
 
 class User(AbstractUser):
     phone = models.CharField(max_length=20, blank=True)
+    avatar_url = models.URLField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -33,6 +34,23 @@ class Address(models.Model):
 
     def __str__(self):
         return f"{self.label} — {self.city}"
+
+
+class SocialAccount(models.Model):
+    PROVIDERS = [("google", "Google"), ("apple", "Apple")]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="social_accounts")
+    provider = models.CharField(max_length=20, choices=PROVIDERS)
+    uid = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["provider", "uid"], name="unique_social_provider_uid"),
+        ]
+
+    def __str__(self):
+        return f"{self.user.email} ({self.provider})"
 
 
 class DeviceToken(models.Model):

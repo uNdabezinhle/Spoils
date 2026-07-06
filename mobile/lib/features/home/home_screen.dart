@@ -4,7 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/spoil_colors.dart';
 import '../../core/theme/spoil_decorations.dart';
+import '../auth/providers/auth_provider.dart';
 import '../cart/providers/cart_provider.dart';
+import '../reminders/models/recipient_model.dart';
+import '../reminders/my_people_screen.dart';
+import '../reminders/providers/reminders_provider.dart';
 import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/spoil_logo.dart';
 import '../catalog/models/category_model.dart';
@@ -17,6 +21,8 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final homeAsync = ref.watch(catalogHomeProvider);
     final cartCount = ref.watch(cartItemCountProvider);
+    final auth = ref.watch(authProvider);
+    final remindersAsync = auth.isAuthenticated ? ref.watch(inAppRemindersProvider) : null;
 
     return homeAsync.when(
       loading: () => const Center(child: CircularProgressIndicator(color: SpoilColors.teal)),
@@ -52,6 +58,27 @@ class HomeScreen extends ConsumerWidget {
               child: _HeroBanner(onBrowse: () => context.go('/shop')),
             ),
           ),
+          if (remindersAsync != null)
+            remindersAsync.when(
+              loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+              error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+              data: (reminders) {
+                if (reminders.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Spoil reminders', style: Theme.of(context).textTheme.titleMedium),
+                        const SizedBox(height: 12),
+                        ...reminders.take(3).map((r) => _InAppReminderCard(reminder: r)),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
@@ -227,6 +254,27 @@ class _HeroBanner extends StatelessWidget {
             child: const Text('Browse gifts'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _InAppReminderCard extends StatelessWidget {
+  const _InAppReminderCard({required this.reminder});
+
+  final InAppReminderModel reminder;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: SpoilColors.cream,
+      margin: const EdgeInsets.only(bottom: 10),
+      child: ListTile(
+        leading: const Icon(Icons.favorite, color: SpoilColors.gold),
+        title: Text(reminder.recipientName, style: Theme.of(context).textTheme.titleSmall),
+        subtitle: Text(reminder.message),
+        trailing: const Icon(Icons.arrow_forward_rounded, color: SpoilColors.teal),
+        onTap: () => context.push(occasionPathForId(reminder.id)),
       ),
     );
   }

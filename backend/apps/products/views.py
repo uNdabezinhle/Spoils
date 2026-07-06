@@ -41,6 +41,7 @@ def product_list(request):
     popular = request.query_params.get("popular")
     min_price = request.query_params.get("min_price")
     max_price = request.query_params.get("max_price")
+    occasion = request.query_params.get("occasion")
 
     if category:
         qs = qs.filter(category__slug=category)
@@ -54,6 +55,8 @@ def product_list(request):
         qs = qs.filter(base_price__gte=min_price)
     if max_price:
         qs = qs.filter(base_price__lte=max_price)
+    if occasion:
+        qs = qs.filter(occasion=occasion)
 
     return Response(ProductListSerializer(qs, many=True).data)
 

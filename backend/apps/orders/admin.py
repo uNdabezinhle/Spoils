@@ -1,6 +1,7 @@
 from django.contrib import admin, messages
 
 from .models import Cart, CartItem, Order, OrderItem, PromoCode
+from .services.notifications import notify_order_status_change
 
 
 class OrderItemInline(admin.TabularInline):
@@ -46,27 +47,51 @@ class OrderAdmin(admin.ModelAdmin):
         ("Timestamps", {"fields": ("created_at", "updated_at")}),
     )
 
+    def save_model(self, request, obj, form, change):
+        previous_status = None
+        if change and obj.pk:
+            previous_status = Order.objects.filter(pk=obj.pk).values_list("status", flat=True).first()
+        super().save_model(request, obj, form, change)
+        if change:
+            notify_order_status_change(order=obj, previous_status=previous_status)
+
     @admin.action(description="Mark selected as Processing")
     def mark_processing(self, request, queryset):
-        updated = queryset.filter(status__in=["paid", "processing"]).update(status="processing")
+        updated = self._transition_status(queryset, "processing", ["paid", "processing"])
         self.message_user(request, f"{updated} order(s) marked as processing.", messages.SUCCESS)
 
     @admin.action(description="Mark selected as Shipped")
     def mark_shipped(self, request, queryset):
-        updated = queryset.filter(status__in=["paid", "processing", "shipped"]).update(status="shipped")
+        updated = self._transition_status(queryset, "shipped", ["paid", "processing", "shipped"])
         self.message_user(request, f"{updated} order(s) marked as shipped.", messages.SUCCESS)
 
     @admin.action(description="Mark selected as Delivered")
     def mark_delivered(self, request, queryset):
-        updated = queryset.filter(status__in=["paid", "processing", "shipped", "delivered"]).update(
-            status="delivered"
+        updated = self._transition_status(
+            queryset, "delivered", ["paid", "processing", "shipped", "delivered"]
         )
         self.message_user(request, f"{updated} order(s) marked as delivered.", messages.SUCCESS)
 
     @admin.action(description="Mark selected as Cancelled")
     def mark_cancelled(self, request, queryset):
-        updated = queryset.exclude(status="cancelled").update(status="cancelled")
+        updated = self._transition_status(queryset, "cancelled", exclude_status="cancelled")
         self.message_user(request, f"{updated} order(s) cancelled.", messages.WARNING)
+
+    def _transition_status(self, queryset, new_status, allowed=None, exclude_status=None):
+        updated = 0
+        for order in queryset.select_related("user"):
+            if exclude_status and order.status == exclude_status:
+                continue
+            if allowed is not None and order.status not in allowed:
+                continue
+            previous = order.status
+            if previous == new_status:
+                continue
+            order.status = new_status
+            order.save(update_fields=["status", "updated_at"])
+            notify_order_status_change(order=order, previous_status=previous)
+            updated += 1
+        return updated
 
 
 @admin.register(PromoCode)

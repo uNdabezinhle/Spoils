@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 import uuid
 
 import requests
@@ -70,3 +72,17 @@ def verify_transaction(reference: str) -> dict:
         "amount": data["amount"],
         "demo_mode": False,
     }
+
+
+def verify_webhook_signature(*, payload: bytes, signature: str) -> bool:
+    """Validate Paystack x-paystack-signature (HMAC SHA512 of raw body)."""
+    if is_demo_mode():
+        return True
+    if not signature:
+        return False
+    digest = hmac.new(
+        settings.PAYSTACK_SECRET_KEY.encode("utf-8"),
+        payload,
+        hashlib.sha512,
+    ).hexdigest()
+    return hmac.compare_digest(digest, signature)

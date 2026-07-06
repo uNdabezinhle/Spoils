@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/brand_constants.dart';
 import '../../core/theme/spoil_colors.dart';
 import '../../core/theme/spoil_decorations.dart';
+import '../../shared/widgets/profile_avatar.dart';
 import '../auth/providers/auth_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -48,17 +49,9 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: Colors.white,
-                        child: Text(
-                          user.displayName.isNotEmpty ? user.displayName[0].toUpperCase() : 'S',
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: SpoilColors.teal,
-                          ),
-                        ),
+                      ProfileAvatar(
+                        name: user.displayName,
+                        avatarUrl: user.avatarUrl,
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -113,6 +106,13 @@ class ProfileScreen extends ConsumerWidget {
                       title: const Text('Delivery addresses'),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => context.push('/profile/addresses'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.autorenew, color: SpoilColors.teal),
+                      title: const Text('Subscriptions'),
+                      subtitle: const Text('Monthly spoil plans & gift credit'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push('/subscriptions'),
                     ),
                     ListTile(
                       leading: const Icon(Icons.logout, color: SpoilColors.teal),

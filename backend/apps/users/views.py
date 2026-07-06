@@ -1,3 +1,6 @@
+import os
+import uuid
+
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.utils.encoding import force_bytes, force_str
@@ -13,6 +16,12 @@ from django.conf import settings
 from .models import Address, DeviceToken, User
 from .serializers import AddressSerializer, RegisterSerializer, UserSerializer
 from .services.popia import delete_user_account, export_user_data
+from .services.social_auth import (
+    SocialAuthError,
+    authenticate_social_user,
+    verify_apple_identity_token,
+    verify_google_id_token,
+)
 
 
 def _tokens_for_user(user):
@@ -30,6 +39,76 @@ def register(request):
         {"user": UserSerializer(user).data, "tokens": _tokens_for_user(user)},
         status=status.HTTP_201_CREATED,
     )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def google_login(request):
+    id_token = request.data.get("id_token", "").strip()
+    if not id_token:
+        return Response({"detail": "id_token is required."}, status=400)
+    try:
+        profile = verify_google_id_token(id_token)
+        user = authenticate_social_user(profile=profile)
+    except SocialAuthError as exc:
+        return Response({"detail": str(exc)}, status=400)
+    return Response({"user": UserSerializer(user).data, "tokens": _tokens_for_user(user)})
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def apple_login(request):
+    id_token = request.data.get("id_token", "").strip()
+    if not id_token:
+        return Response({"detail": "id_token is required."}, status=400)
+    try:
+        profile = verify_apple_identity_token(id_token)
+        user = authenticate_social_user(
+            profile=profile,
+            fallback_first_name=request.data.get("first_name", ""),
+            fallback_last_name=request.data.get("last_name", ""),
+        )
+    except SocialAuthError as exc:
+        return Response({"detail": str(exc)}, status=400)
+    return Response({"user": UserSerializer(user).data, "tokens": _tokens_for_user(user)})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def upload_avatar(request):
+    photo = request.FILES.get("photo")
+    if not photo:
+        return Response({"detail": "No photo uploaded."}, status=400)
+    if photo.size > 5 * 1024 * 1024:
+        return Response({"detail": "Photo must be under 5MB."}, status=400)
+
+    allowed = {"image/jpeg", "image/png", "image/webp", "image/jpg"}
+    if photo.content_type not in allowed:
+        return Response({"detail": "Only JPEG, PNG, and WebP images are allowed."}, status=400)
+
+    if settings.CLOUDINARY_CLOUD_NAME:
+        import cloudinary.uploader
+
+        result = cloudinary.uploader.upload(
+            photo,
+            folder="spoil/avatars",
+            transformation={"width": 400, "height": 400, "crop": "fill", "gravity": "face"},
+        )
+        photo_url = result["secure_url"]
+    else:
+        ext = os.path.splitext(photo.name)[1] or ".jpg"
+        filename = f"{uuid.uuid4().hex}{ext}"
+        upload_dir = os.path.join(str(settings.MEDIA_ROOT), "avatars")
+        os.makedirs(upload_dir, exist_ok=True)
+        filepath = os.path.join(upload_dir, filename)
+        with open(filepath, "wb+") as dest:
+            for chunk in photo.chunks():
+                dest.write(chunk)
+        photo_url = request.build_absolute_uri(settings.MEDIA_URL + f"avatars/{filename}")
+
+    request.user.avatar_url = photo_url
+    request.user.save(update_fields=["avatar_url"])
+    return Response({"avatar_url": photo_url, "user": UserSerializer(request.user).data})
 
 
 @api_view(["POST"])

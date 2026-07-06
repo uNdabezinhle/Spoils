@@ -24,7 +24,13 @@ services:
   api:
     build:
       context: ./backend
-    command: python manage.py runserver 0.0.0.0:8000
+    command: >
+      sh -c "python manage.py migrate &&
+      if [ \"$$DJANGO_USE_RUNSERVER\" = \"true\" ]; then
+        python manage.py runserver 0.0.0.0:8000;
+      else
+        gunicorn spoil.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120;
+      fi"
     volumes:
       - ./backend:/app
     ports:
@@ -35,6 +41,7 @@ services:
       DATABASE_URL: postgres://spoil:spoil@db:5432/spoil
       REDIS_URL: redis://redis:6379/0
       DJANGO_DEBUG: "true"
+      DJANGO_USE_RUNSERVER: "true"
     depends_on:
       db:
         condition: service_healthy
