@@ -106,6 +106,15 @@ class AuthRepository {
     await _dio.delete('/auth/addresses/$id/');
   }
 
+  Future<Map<String, dynamic>> exportMyData() async {
+    final response = await _dio.get('/auth/me/export/');
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<void> deleteMyAccount(String password) async {
+    await _dio.post('/auth/me/delete/', data: {'password': password});
+  }
+
   Future<void> logout() async {
     final refresh = await _tokenStorage.getRefreshToken();
     try {

@@ -12,6 +12,7 @@ from django.conf import settings
 
 from .models import Address, DeviceToken, User
 from .serializers import AddressSerializer, RegisterSerializer, UserSerializer
+from .services.popia import delete_user_account, export_user_data
 
 
 def _tokens_for_user(user):
@@ -66,6 +67,25 @@ def logout(request):
         except Exception:
             pass
     return Response({"detail": "Logged out successfully."})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def me_export(request):
+    return Response(export_user_data(request.user))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def me_delete(request):
+    password = request.data.get("password", "")
+    if not password:
+        return Response({"detail": "password is required to delete your account."}, status=400)
+    try:
+        delete_user_account(request.user, password=password)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=400)
+    return Response({"detail": "Your account and personal data have been permanently deleted."})
 
 
 @api_view(["GET", "PATCH"])

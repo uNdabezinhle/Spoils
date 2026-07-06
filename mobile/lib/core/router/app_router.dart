@@ -19,7 +19,11 @@ import '../../features/orders/screens/checkout_screen.dart';
 import '../../features/orders/screens/order_confirmation_screen.dart';
 import '../../features/orders/screens/order_detail_screen.dart';
 import '../../features/orders/screens/receipt_screen.dart';
+import '../../features/content/screens/faq_screen.dart';
+import '../../features/content/screens/legal_hub_screen.dart';
+import '../../features/content/screens/static_page_screen.dart';
 import '../../features/profile/profile_screen.dart';
+import '../../features/profile/screens/popia_screen.dart';
 import '../../features/reminders/my_people_screen.dart';
 import '../../features/shop/shop_screen.dart';
 import '../../features/splash/splash_screen.dart';
@@ -34,6 +38,7 @@ const _protectedPrefixes = [
   '/people',
   '/profile/edit',
   '/profile/addresses',
+  '/profile/data',
   '/cart',
 ];
 
@@ -101,6 +106,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const CheckoutScreen(),
       ),
       GoRoute(
+        path: '/content/faq',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const FaqScreen(),
+      ),
+      GoRoute(
+        path: '/content/:pageType',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => StaticPageScreen(pageType: state.pathParameters['pageType']!),
+      ),
+      GoRoute(
         path: '/orders/confirmation/:id',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => OrderConfirmationScreen(
@@ -135,6 +150,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/profile', builder: (context, state) => const ProfileScreen()),
           GoRoute(path: '/profile/edit', builder: (context, state) => const EditProfileScreen()),
           GoRoute(path: '/profile/addresses', builder: (context, state) => const AddressesScreen()),
+          GoRoute(path: '/profile/legal', builder: (context, state) => const LegalHubScreen()),
+          GoRoute(path: '/profile/data', builder: (context, state) => const PopiaScreen()),
         ],
       ),
     ],
