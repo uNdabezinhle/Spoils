@@ -71,7 +71,7 @@ def serialize_order_detail(order: Order) -> dict:
 
 def serialize_receipt(order: Order) -> dict:
     detail = serialize_order_detail(order)
-    detail["receipt_title"] = f"Spoil Order #{order.id}"
+    detail["receipt_title"] = f"Spoils Order #{order.id}"
     detail["tagline"] = "Spoil them properly."
     detail["customer_email"] = order.user.email
     detail["customer_name"] = order.user.get_full_name() or order.user.email

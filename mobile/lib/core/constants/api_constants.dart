@@ -1,3 +1,5 @@
+import 'brand_constants.dart';
+
 abstract final class ApiConstants {
   /// Android emulator loopback to host machine.
   static const String baseUrl = String.fromEnvironment(
@@ -5,5 +7,5 @@ abstract final class ApiConstants {
     defaultValue: 'http://10.0.2.2:8000/api/v1',
   );
 
-  static const String tagline = 'Spoil them properly.';
+  static const String tagline = BrandConstants.tagline;
 }

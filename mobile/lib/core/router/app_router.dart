@@ -28,6 +28,7 @@ import '../../features/reminders/my_people_screen.dart';
 import '../../features/shop/shop_screen.dart';
 import '../../features/splash/splash_screen.dart';
 import '../theme/spoil_colors.dart';
+import '../theme/spoil_decorations.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -183,27 +184,43 @@ class AppShell extends ConsumerWidget {
 
     return Scaffold(
       body: child,
+      extendBody: true,
       floatingActionButton: cartCount > 0
-          ? FloatingActionButton.extended(
-              onPressed: () => context.push('/cart'),
-              backgroundColor: SpoilColors.teal,
-              icon: Badge(
-                label: Text('$cartCount'),
-                child: const Icon(Icons.shopping_bag_outlined, color: Colors.white),
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 72),
+              child: FloatingActionButton(
+                onPressed: () => context.push('/cart'),
+                backgroundColor: SpoilColors.teal,
+                elevation: 4,
+                child: Badge(
+                  label: Text('$cartCount'),
+                  child: const Icon(Icons.shopping_bag_outlined, color: Colors.white),
+                ),
               ),
-              label: const Text('Cart', style: TextStyle(color: Colors.white)),
             )
           : null,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex(context),
-        onDestinationSelected: (i) => _onTap(context, i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.storefront_outlined), selectedIcon: Icon(Icons.storefront), label: 'Shop'),
-          NavigationDestination(icon: Icon(Icons.favorite_outline), selectedIcon: Icon(Icons.favorite), label: 'My People'),
-          NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: 'Orders'),
-          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
-        ],
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: SafeArea(
+          child: DecoratedBox(
+            decoration: SpoilDecorations.navBar(),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(SpoilColors.radiusXl),
+              child: NavigationBar(
+                selectedIndex: _selectedIndex(context),
+                onDestinationSelected: (i) => _onTap(context, i),
+                destinations: const [
+                  NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
+                  NavigationDestination(icon: Icon(Icons.storefront_outlined), selectedIcon: Icon(Icons.storefront), label: 'Shop'),
+                  NavigationDestination(icon: Icon(Icons.favorite_outline), selectedIcon: Icon(Icons.favorite), label: 'People'),
+                  NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: 'Orders'),
+                  NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../shared/widgets/spoil_logo.dart';
+import '../../../core/constants/brand_constants.dart';
+import '../../../core/theme/spoil_decorations.dart';
+import '../../../shared/widgets/auth_gradient_header.dart';
 import '../../../shared/widgets/spoil_text_field.dart';
 import '../providers/auth_provider.dart';
 
@@ -54,86 +56,99 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final auth = ref.watch(authProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Join Spoil')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Center(child: SpoilLogo(showTagline: true)),
-              const SizedBox(height: 8),
-              Text(
-                'Create your account — let\'s make gifting special.',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 28),
-              if (auth.error != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(auth.error!, style: const TextStyle(color: Colors.redAccent)),
+        child: Column(
+          children: [
+            AuthGradientHeader(
+              title: 'Join ${BrandConstants.appName}',
+              subtitle: 'Create your account — let\'s make gifting special.',
+            ),
+            Transform.translate(
+              offset: const Offset(0, -24),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: SpoilDecorations.card(),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (auth.error != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: Text(auth.error!, style: const TextStyle(color: Colors.redAccent)),
+                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: SpoilTextField(
+                                controller: _firstNameController,
+                                label: 'First name',
+                                textInputAction: TextInputAction.next,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: SpoilTextField(
+                                controller: _lastNameController,
+                                label: 'Last name',
+                                textInputAction: TextInputAction.next,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        SpoilTextField(
+                          controller: _emailController,
+                          label: 'Email',
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        SpoilTextField(
+                          controller: _phoneController,
+                          label: 'Phone (optional)',
+                          keyboardType: TextInputType.phone,
+                        ),
+                        const SizedBox(height: 16),
+                        SpoilTextField(
+                          controller: _passwordController,
+                          label: 'Password',
+                          obscureText: _obscurePassword,
+                          validator: (v) => (v != null && v.length >= 8) ? null : 'At least 8 characters',
+                        ),
+                        const SizedBox(height: 16),
+                        SpoilTextField(
+                          controller: _confirmController,
+                          label: 'Confirm password',
+                          obscureText: _obscurePassword,
+                          validator: (v) => v != _passwordController.text ? 'Passwords do not match' : null,
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: auth.isLoading ? null : _submit,
+                          child: auth.isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Text('Create account'),
+                        ),
+                        TextButton(
+                          onPressed: () => context.pop(),
+                          child: const Text('Already have an account? Sign in'),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              Row(
-                children: [
-                  Expanded(
-                    child: SpoilTextField(
-                      controller: _firstNameController,
-                      label: 'First name',
-                      textInputAction: TextInputAction.next,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SpoilTextField(
-                      controller: _lastNameController,
-                      label: 'Last name',
-                      textInputAction: TextInputAction.next,
-                    ),
-                  ),
-                ],
               ),
-              const SizedBox(height: 16),
-              SpoilTextField(
-                controller: _emailController,
-                label: 'Email',
-                keyboardType: TextInputType.emailAddress,
-                validator: (v) => (v == null || !v.contains('@')) ? 'Enter a valid email' : null,
-              ),
-              const SizedBox(height: 16),
-              SpoilTextField(
-                controller: _phoneController,
-                label: 'Phone (optional)',
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 16),
-              SpoilTextField(
-                controller: _passwordController,
-                label: 'Password',
-                obscureText: _obscurePassword,
-                validator: (v) => (v != null && v.length >= 8) ? null : 'At least 8 characters',
-              ),
-              const SizedBox(height: 16),
-              SpoilTextField(
-                controller: _confirmController,
-                label: 'Confirm password',
-                obscureText: _obscurePassword,
-                validator: (v) => v != _passwordController.text ? 'Passwords do not match' : null,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: auth.isLoading ? null : _submit,
-                child: auth.isLoading
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Create account'),
-              ),
-              TextButton(
-                onPressed: () => context.pop(),
-                child: const Text('Already have an account? Sign in'),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 32),
+          ],
         ),
       ),
     );

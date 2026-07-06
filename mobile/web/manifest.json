@@ -1,11 +1,11 @@
 {
-    "name": "spoil",
-    "short_name": "spoil",
+    "name": "Spoils",
+    "short_name": "Spoils",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0F766E",
+    "theme_color": "#0F766E",
+    "description": "Spoils — South Africa's modern gift shop. Spoil them properly.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

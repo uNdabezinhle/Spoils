@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/spoil_colors.dart';
+import '../../core/theme/spoil_decorations.dart';
 import '../../shared/widgets/category_chip.dart';
 import '../../shared/widgets/product_card.dart';
 import '../catalog/data/catalog_repository.dart';
@@ -99,18 +100,23 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
               const SizedBox(height: 4),
               Text('Go on, spoil them.', style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 16),
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search gifts…',
-                  prefixIcon: const Icon(Icons.search, color: SpoilColors.teal),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.search),
-                    onPressed: () => _applySearch(_searchController.text.trim()),
+              Container(
+                decoration: SpoilDecorations.card(),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search gifts…',
+                    filled: false,
+                    border: InputBorder.none,
+                    prefixIcon: const Icon(Icons.search, color: SpoilColors.teal),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.arrow_forward_rounded, color: SpoilColors.teal),
+                      onPressed: () => _applySearch(_searchController.text.trim()),
+                    ),
                   ),
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: _applySearch,
                 ),
-                textInputAction: TextInputAction.search,
-                onSubmitted: _applySearch,
               ),
             ],
           ),
@@ -167,9 +173,9 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.72,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 0.68,
                 ),
                 itemCount: products.length,
                 itemBuilder: (_, i) => ProductCard(product: products[i]),
@@ -197,7 +203,11 @@ class _PriceChip extends StatelessWidget {
         label: Text(label, style: const TextStyle(fontSize: 12)),
         selected: selected,
         onSelected: (_) => onTap(),
-        selectedColor: SpoilColors.blush,
+        selectedColor: SpoilColors.tealTint,
+        labelStyle: TextStyle(
+          color: selected ? SpoilColors.teal : SpoilColors.charcoalMuted,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+        ),
       ),
     );
   }

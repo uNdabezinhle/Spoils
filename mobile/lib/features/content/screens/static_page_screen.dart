@@ -15,7 +15,7 @@ class StaticPageScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: pageAsync.maybeWhen(data: (p) => Text(p.title), orElse: () => const Text('Spoil')),
+        title: pageAsync.maybeWhen(data: (p) => Text(p.title), orElse: () => const Text('Spoils')),
       ),
       body: pageAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: SpoilColors.teal)),

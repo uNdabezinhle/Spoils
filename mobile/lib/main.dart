@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/constants/brand_constants.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/spoil_theme.dart';
 
@@ -17,7 +18,7 @@ class SpoilApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'Spoil',
+      title: BrandConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: SpoilTheme.light,
       routerConfig: router,

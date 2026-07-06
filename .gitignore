@@ -58,3 +58,5 @@ mcps/
 
 # Docker
 *.pid
+celerybeat-schedule
+terminals/

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/spoil_colors.dart';
+import '../../core/theme/spoil_decorations.dart';
+import '../cart/providers/cart_provider.dart';
 import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/spoil_logo.dart';
 import '../catalog/models/category_model.dart';
@@ -14,6 +16,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeAsync = ref.watch(catalogHomeProvider);
+    final cartCount = ref.watch(cartItemCountProvider);
 
     return homeAsync.when(
       loading: () => const Center(child: CircularProgressIndicator(color: SpoilColors.teal)),
@@ -22,27 +25,48 @@ class HomeScreen extends ConsumerWidget {
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
+              child: Row(
                 children: [
-                  const SpoilLogo(showTagline: true),
-                  const SizedBox(height: 24),
-                  _HeroBanner(onBrowse: () => context.go('/shop')),
-                  const SizedBox(height: 28),
-                  Text('Shop by category', style: Theme.of(context).textTheme.headlineSmall),
-                  const SizedBox(height: 12),
+                  const Expanded(child: SpoilLogo(showTagline: true)),
+                  if (cartCount > 0)
+                    IconButton(
+                      onPressed: () => context.push('/cart'),
+                      icon: Badge(
+                        label: Text('$cartCount'),
+                        child: const Icon(Icons.shopping_bag_outlined, color: SpoilColors.teal),
+                      ),
+                    )
+                  else
+                    IconButton(
+                      onPressed: () => context.push('/cart'),
+                      icon: const Icon(Icons.shopping_bag_outlined, color: SpoilColors.teal),
+                    ),
                 ],
               ),
             ),
           ),
           SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              child: _HeroBanner(onBrowse: () => context.go('/shop')),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
+              child: Text('Shop by category', style: Theme.of(context).textTheme.headlineSmall),
+            ),
+          ),
+          SliverToBoxAdapter(
             child: SizedBox(
-              height: 44,
-              child: ListView(
+              height: 96,
+              child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: home.categories.map((cat) => _CategoryPill(category: cat)).toList(),
+                itemCount: home.categories.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (_, i) => _CategoryTile(category: home.categories[i]),
               ),
             ),
           ),
@@ -68,13 +92,18 @@ class HomeScreen extends ConsumerWidget {
           else
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 220,
+                height: 240,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   itemCount: home.featured.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (_, i) => ProductCard(product: home.featured[i], width: 170, compact: true),
+                  separatorBuilder: (_, __) => const SizedBox(width: 16),
+                  itemBuilder: (_, i) => ProductCard(
+                    product: home.featured[i],
+                    width: 190,
+                    compact: true,
+                    showFeaturedBadge: true,
+                  ),
                 ),
               ),
             ),
@@ -85,13 +114,13 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
             sliver: SliverGrid(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.72,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 0.68,
               ),
               delegate: SliverChildBuilderDelegate(
                 (context, index) => ProductCard(product: home.popular[index]),
@@ -105,20 +134,57 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _CategoryPill extends StatelessWidget {
-  const _CategoryPill({required this.category});
+class _CategoryTile extends StatelessWidget {
+  const _CategoryTile({required this.category});
 
   final CategoryModel category;
 
+  IconData get _icon {
+    switch (category.slug) {
+      case 'flowers':
+        return Icons.local_florist_outlined;
+      case 'hampers':
+        return Icons.lunch_dining_outlined;
+      case 'personalised':
+        return Icons.draw_outlined;
+      case 'experiences':
+        return Icons.celebration_outlined;
+      case 'corporate':
+        return Icons.business_center_outlined;
+      default:
+        return Icons.card_giftcard_outlined;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ActionChip(
-        label: Text(category.name),
-        backgroundColor: Colors.white,
-        side: const BorderSide(color: SpoilColors.blush),
-        onPressed: () => context.go('/shop?category=${category.slug}'),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(SpoilColors.radiusLg),
+        onTap: () => context.go('/shop?category=${category.slug}'),
+        child: Ink(
+          width: 88,
+          decoration: SpoilDecorations.card(),
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(_icon, color: SpoilColors.teal, size: 28),
+              const SizedBox(height: 8),
+              Text(
+                category.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: SpoilColors.charcoal,
+                    ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -133,14 +199,13 @@ class _HeroBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [SpoilColors.teal, Color(0xFF115E59)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
+        gradient: SpoilDecorations.heroGradient,
+        borderRadius: BorderRadius.circular(SpoilColors.radiusLg),
+        boxShadow: const [
+          BoxShadow(color: SpoilColors.shadow, blurRadius: 24, offset: Offset(0, 8)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,15 +214,16 @@ class _HeroBanner extends StatelessWidget {
             'Make someone\'s day',
             style: Theme.of(context).textTheme.displayMedium?.copyWith(color: Colors.white),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             'Beautiful gifts, delivered with care across South Africa.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.9)),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withOpacity(0.92),
+                ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           FilledButton(
             onPressed: onBrowse,
-            style: FilledButton.styleFrom(backgroundColor: SpoilColors.gold, foregroundColor: SpoilColors.charcoal),
             child: const Text('Browse gifts'),
           ),
         ],
@@ -184,7 +250,7 @@ class _HomeError extends StatelessWidget {
             Text('Couldn\'t load gifts', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(
-              'Start the backend with docker compose up, then run seed_spoil.',
+              'Start the backend, then run seed_spoil.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
