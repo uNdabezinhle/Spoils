@@ -2,23 +2,67 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/providers/auth_provider.dart';
+import '../../features/auth/screens/addresses_screen.dart';
+import '../../features/auth/screens/edit_profile_screen.dart';
+import '../../features/auth/screens/forgot_password_screen.dart';
+import '../../features/auth/screens/login_screen.dart';
+import '../../features/auth/screens/register_screen.dart';
+import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/orders/orders_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/reminders/my_people_screen.dart';
 import '../../features/shop/shop_screen.dart';
 import '../../features/splash/splash_screen.dart';
+
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
+const _protectedPrefixes = ['/orders', '/people', '/profile/edit', '/profile/addresses'];
+
 final routerProvider = Provider<GoRouter>((ref) {
+  final authNotifier = ref.watch(authProvider.notifier);
+
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
+    refreshListenable: authNotifier.changes,
+    redirect: (context, state) {
+      final auth = ref.read(authProvider);
+      final path = state.matchedLocation;
+
+      if (auth.status == AuthStatus.unknown) return null;
+
+      final needsAuth = _protectedPrefixes.any((prefix) => path.startsWith(prefix));
+      if (needsAuth && !auth.isAuthenticated) {
+        final redirect = Uri.encodeComponent(path);
+        return '/auth/login?redirect=$redirect';
+      }
+
+      if (path.startsWith('/auth') && auth.isAuthenticated) {
+        return '/home';
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/',
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/auth/login',
+        builder: (context, state) => LoginScreen(redirect: state.uri.queryParameters['redirect']),
+      ),
+      GoRoute(path: '/auth/register', builder: (context, state) => const RegisterScreen()),
+      GoRoute(path: '/auth/forgot-password', builder: (context, state) => const ForgotPasswordScreen()),
+      GoRoute(
+        path: '/auth/reset-password',
+        builder: (context, state) => ResetPasswordScreen(
+          uid: state.uri.queryParameters['uid'],
+          token: state.uri.queryParameters['token'],
+        ),
       ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
@@ -29,6 +73,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/people', builder: (context, state) => const MyPeopleScreen()),
           GoRoute(path: '/orders', builder: (context, state) => const OrdersScreen()),
           GoRoute(path: '/profile', builder: (context, state) => const ProfileScreen()),
+          GoRoute(path: '/profile/edit', builder: (context, state) => const EditProfileScreen()),
+          GoRoute(path: '/profile/addresses', builder: (context, state) => const AddressesScreen()),
         ],
       ),
     ],

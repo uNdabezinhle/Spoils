@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/spoil_colors.dart';
+import '../../features/auth/providers/auth_provider.dart';
 import '../../shared/widgets/spoil_logo.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _fade;
 
@@ -21,9 +23,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
     _fade = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
-    Future.delayed(const Duration(milliseconds: 1800), () {
-      if (mounted) context.go('/home');
-    });
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    await Future.wait<void>([
+      ref.read(authProvider.notifier).restoreSession(),
+      Future<void>.delayed(const Duration(milliseconds: 1600)),
+    ]);
+    if (mounted) context.go('/home');
   }
 
   @override
@@ -44,7 +52,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             children: [
               Container(
                 padding: const EdgeInsets.all(28),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: SpoilColors.blush,
                   shape: BoxShape.circle,
                 ),
@@ -56,6 +64,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               Text(
                 'Let\'s make gifting special',
                 style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 32),
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2, color: SpoilColors.teal),
               ),
             ],
           ),

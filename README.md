@@ -55,6 +55,12 @@ flutter pub get
 flutter run
 ```
 
+### 4. Try authentication (Phase 2)
+
+1. Register a new account via **Profile → Sign in → Create account**
+2. Add a delivery address via **Profile → Delivery addresses**
+3. Password reset emails print to the backend console in development
+
 For a physical device, pass your machine's LAN IP:
 
 ```bash
