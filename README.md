@@ -40,6 +40,7 @@ In another terminal:
 
 ```bash
 docker compose exec api python manage.py migrate
+docker compose exec api python manage.py seed_spoil
 docker compose exec api python manage.py createsuperuser
 ```
 

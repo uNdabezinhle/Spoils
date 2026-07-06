@@ -9,6 +9,7 @@ import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/auth/screens/reset_password_screen.dart';
+import '../../features/catalog/screens/product_detail_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/orders/orders_screen.dart';
 import '../../features/profile/profile_screen.dart';
@@ -64,12 +65,20 @@ final routerProvider = Provider<GoRouter>((ref) {
           token: state.uri.queryParameters['token'],
         ),
       ),
+      GoRoute(
+        path: '/product/:slug',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ProductDetailScreen(slug: state.pathParameters['slug']!),
+      ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
         builder: (context, state, child) => AppShell(child: child),
         routes: [
           GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
-          GoRoute(path: '/shop', builder: (context, state) => const ShopScreen()),
+          GoRoute(
+            path: '/shop',
+            builder: (context, state) => ShopScreen(initialCategory: state.uri.queryParameters['category']),
+          ),
           GoRoute(path: '/people', builder: (context, state) => const MyPeopleScreen()),
           GoRoute(path: '/orders', builder: (context, state) => const OrdersScreen()),
           GoRoute(path: '/profile', builder: (context, state) => const ProfileScreen()),

@@ -9,6 +9,21 @@ from .serializers import CategorySerializer, ProductDetailSerializer, ProductLis
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
+def catalog_home(request):
+    from .models import Category
+
+    categories = Category.objects.filter(is_active=True)
+    featured = Product.objects.filter(is_active=True, is_featured=True).select_related("category")[:8]
+    popular = Product.objects.filter(is_active=True, is_popular=True).select_related("category")[:8]
+    return Response({
+        "categories": CategorySerializer(categories, many=True).data,
+        "featured": ProductListSerializer(featured, many=True).data,
+        "popular": ProductListSerializer(popular, many=True).data,
+    })
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
 def category_list(request):
     from .models import Category
 
