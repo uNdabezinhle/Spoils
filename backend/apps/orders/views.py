@@ -1,17 +1,27 @@
-from decimal import Decimal
+from datetime import datetime
 
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Cart, CartItem
+from .models import Cart, CartItem, Order
+from .order_serializers import serialize_order_detail, serialize_order_summary, serialize_receipt
 from .serializers import (
     AddToCartSerializer,
     UpdateCartItemSerializer,
     serialize_cart,
     serialize_cart_item,
 )
+from .services.checkout import (
+    calculate_order_totals,
+    create_order_from_cart,
+    initiate_payment,
+    mark_order_paid,
+    reorder_to_cart,
+)
+from .services.paystack import PaystackError, is_demo_mode, verify_transaction
 
 
 def _get_cart(user):
@@ -97,18 +107,160 @@ def cart_clear(request):
     return Response({"detail": "Cart cleared."})
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def checkout_preview(request):
+    """Return order totals before payment."""
+    cart = _get_cart(request.user)
+    if not cart.items.exists():
+        return Response({"detail": "Your cart is empty."}, status=400)
+
+    delivery_type = request.data.get("delivery_type", "standard")
+    promo_code = request.data.get("promo_code")
+
+    from .models import PromoCode
+    from django.utils import timezone
+
+    promo = None
+    if promo_code:
+        promo = PromoCode.objects.filter(code__iexact=promo_code.strip(), is_active=True).first()
+        if not promo:
+            return Response({"promo_code": "Invalid promo code."}, status=400)
+        if promo.expires_at and promo.expires_at < timezone.now():
+            return Response({"promo_code": "This promo code has expired."}, status=400)
+
+    totals = calculate_order_totals(cart, delivery_type, promo)
+    return Response({
+        "subtotal": str(totals["subtotal"]),
+        "delivery_fee": str(totals["delivery_fee"]),
+        "discount": str(totals["discount"]),
+        "total": str(totals["total"]),
+        "demo_mode": is_demo_mode(),
+    })
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def checkout_initiate(request):
+    address_id = request.data.get("address_id")
+    delivery_date_str = request.data.get("delivery_date")
+    delivery_type = request.data.get("delivery_type", "standard")
+    promo_code = request.data.get("promo_code")
+
+    if not address_id or not delivery_date_str:
+        return Response({"detail": "address_id and delivery_date are required."}, status=400)
+
+    try:
+        delivery_date = datetime.strptime(delivery_date_str, "%Y-%m-%d").date()
+    except ValueError:
+        return Response({"delivery_date": "Use YYYY-MM-DD format."}, status=400)
+
+    try:
+        order = create_order_from_cart(
+            request.user,
+            address_id=int(address_id),
+            delivery_date=delivery_date,
+            delivery_type=delivery_type,
+            promo_code=promo_code,
+        )
+        payment = initiate_payment(order)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=400)
+    except PaystackError as exc:
+        return Response({"detail": str(exc)}, status=502)
+
+    return Response({
+        **payment,
+        "order": serialize_order_summary(order),
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def checkout_verify(request):
+    reference = request.data.get("reference", "").strip()
+    order_id = request.data.get("order_id")
+
+    if not reference:
+        return Response({"detail": "reference is required."}, status=400)
+
+    try:
+        order = Order.objects.get(pk=order_id, user=request.user)
+    except (Order.DoesNotExist, TypeError, ValueError):
+        try:
+            order = Order.objects.get(paystack_reference=reference, user=request.user)
+        except Order.DoesNotExist:
+            return Response({"detail": "Order not found."}, status=404)
+
+    if order.paystack_reference != reference:
+        return Response({"detail": "Reference mismatch."}, status=400)
+
+    try:
+        result = verify_transaction(reference)
+    except PaystackError as exc:
+        return Response({"detail": str(exc)}, status=502)
+
+    if result.get("demo_mode") or result.get("status") == "success":
+        order = mark_order_paid(order, reference)
+        return Response({
+            "detail": "Payment successful.",
+            "order": serialize_order_detail(order),
+        })
+
+    return Response({"detail": "Payment not completed.", "status": result.get("status")}, status=400)
+
+
+@csrf_exempt
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def paystack_webhook(request):
+    event = request.data.get("event")
+    data = request.data.get("data", {})
+    if event == "charge.success":
+        reference = data.get("reference")
+        if reference:
+            try:
+                order = Order.objects.get(paystack_reference=reference)
+                mark_order_paid(order, reference)
+            except Order.DoesNotExist:
+                pass
+    return Response({"status": "ok"})
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def order_list(request):
-    orders = request.user.orders.all()[:50]
-    data = [
-        {
-            "id": o.id,
-            "status": o.status,
-            "total_amount": str(o.total_amount),
-            "delivery_date": o.delivery_date.isoformat(),
-            "created_at": o.created_at.isoformat(),
-        }
-        for o in orders
-    ]
-    return Response(data)
+    orders = request.user.orders.prefetch_related("items").all()[:50]
+    return Response([serialize_order_summary(o) for o in orders])
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def order_detail(request, pk):
+    try:
+        order = Order.objects.prefetch_related("items__product").get(pk=pk, user=request.user)
+    except Order.DoesNotExist:
+        return Response({"detail": "Order not found."}, status=404)
+    return Response(serialize_order_detail(order))
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def order_receipt(request, pk):
+    try:
+        order = Order.objects.prefetch_related("items__product").get(pk=pk, user=request.user)
+    except Order.DoesNotExist:
+        return Response({"detail": "Order not found."}, status=404)
+    return Response(serialize_receipt(order))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def order_reorder(request, pk):
+    try:
+        order = Order.objects.prefetch_related("items__product").get(pk=pk, user=request.user)
+    except Order.DoesNotExist:
+        return Response({"detail": "Order not found."}, status=404)
+
+    count = reorder_to_cart(order)
+    return Response({"detail": f"{count} item(s) added to cart.", "items_added": count})

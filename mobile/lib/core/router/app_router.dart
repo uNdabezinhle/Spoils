@@ -15,6 +15,10 @@ import '../../features/cart/screens/personalise_screen.dart';
 import '../../features/catalog/screens/product_detail_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/orders/orders_screen.dart';
+import '../../features/orders/screens/checkout_screen.dart';
+import '../../features/orders/screens/order_confirmation_screen.dart';
+import '../../features/orders/screens/order_detail_screen.dart';
+import '../../features/orders/screens/receipt_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/reminders/my_people_screen.dart';
 import '../../features/shop/shop_screen.dart';
@@ -26,6 +30,7 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 const _protectedPrefixes = [
   '/orders',
+  '/checkout',
   '/people',
   '/profile/edit',
   '/profile/addresses',
@@ -89,6 +94,32 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/cart',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const CartScreen(),
+      ),
+      GoRoute(
+        path: '/checkout',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CheckoutScreen(),
+      ),
+      GoRoute(
+        path: '/orders/confirmation/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => OrderConfirmationScreen(
+          orderId: int.parse(state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/orders/:id/receipt',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ReceiptScreen(
+          orderId: int.parse(state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/orders/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => OrderDetailScreen(
+          orderId: int.parse(state.pathParameters['id']!),
+        ),
       ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,

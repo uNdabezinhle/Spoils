@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.content.models import FAQ, StaticPage
+from apps.orders.models import PromoCode
 from apps.products.models import Category, MessageTemplate, Product, WrappingOption
 
 
@@ -111,6 +112,11 @@ class Command(BaseCommand):
                 title=title,
                 defaults={"occasion": occasion, "message": message, "is_active": True},
             )
+
+        PromoCode.objects.update_or_create(
+            code="SPOIL10",
+            defaults={"discount_percent": 10, "is_active": True},
+        )
 
         faqs = [
             ("How long does delivery take?", "Delivery times vary by product and location. Same-day delivery is available in Johannesburg, Cape Town and Durban for selected gifts. Most orders arrive within 2–5 business days."),

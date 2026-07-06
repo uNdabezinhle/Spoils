@@ -197,11 +197,7 @@ class _CartSummary extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Checkout coming in Phase 5 — almost there!')),
-                  );
-                },
+                onPressed: () => context.push('/checkout'),
                 child: const Text('Proceed to checkout'),
               ),
             ),
