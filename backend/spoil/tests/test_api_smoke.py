@@ -642,6 +642,8 @@ class Phase2PolishSmokeTests(APITestCase):
         products = suggestions.json()["products"]
         self.assertGreaterEqual(len(products), 1)
         self.assertIn("pick_reason", products[0])
+        self.assertIn("ai_ranked", products[0])
+        self.assertFalse(products[0]["ai_ranked"])
 
         mark = self.client.post(f"/api/v1/reminders/occasions/{occasion_id}/mark-sent/")
         self.assertEqual(mark.status_code, status.HTTP_200_OK)
@@ -740,6 +742,64 @@ class Phase2PolishSmokeTests(APITestCase):
         cancel = self.client.post(f"/api/v1/group-gifts/{gift_id}/cancel/")
         self.assertEqual(cancel.status_code, status.HTTP_200_OK)
         self.assertEqual(cancel.json()["group_gift"]["status"], "cancelled")
+
+    def test_subscription_fulfillments_list(self):
+        from apps.orders.models import Order, OrderItem
+        from apps.subscriptions.models import UserSubscription
+
+        address = self.client.post(
+            "/api/v1/auth/addresses/",
+            {
+                "label": "Home",
+                "recipient_name": "Kaya",
+                "phone": "0821234567",
+                "street_address": "2 Gift Lane",
+                "suburb": "Sandton",
+                "city": "Johannesburg",
+                "province": "Gauteng",
+                "postal_code": "2196",
+            },
+            format="json",
+        )
+        self.assertEqual(address.status_code, status.HTTP_201_CREATED)
+
+        plan = SubscriptionPlan.objects.create(
+            name="Spoil Box",
+            slug="spoil-box-polish",
+            model_type="spoil_box",
+            description="Monthly box.",
+            price_monthly="499.00",
+            is_active=True,
+        )
+        sub = UserSubscription.objects.create(user=self.user, plan=plan, status="active")
+
+        category = Category.objects.create(name="Boxes", slug="boxes-polish")
+        product = Product.objects.create(
+            category=category,
+            name="July Box",
+            slug="july-box",
+            description="Curated.",
+            base_price="449.00",
+            is_active=True,
+        )
+        delivery = date.today() + timedelta(days=5)
+        order = Order.objects.create(
+            user=self.user,
+            status="processing",
+            total_amount=product.base_price,
+            delivery_address=address.json(),
+            delivery_date=delivery,
+            subscription_id=sub.id,
+        )
+        OrderItem.objects.create(order=order, product=product, quantity=1, unit_price=product.base_price)
+
+        fulfillments = self.client.get("/api/v1/subscriptions/fulfillments/")
+        self.assertEqual(fulfillments.status_code, status.HTTP_200_OK)
+        items = fulfillments.json()["fulfillments"]
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["order_id"], order.id)
+        self.assertEqual(items[0]["product_name"], "July Box")
+        self.assertEqual(items[0]["status"], "processing")
 
 
 class AnalyticsSmokeTests(APITestCase):

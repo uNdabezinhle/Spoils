@@ -16,6 +16,7 @@ class ProductModel {
     this.model3dUrl = '',
     this.previewScale = '1.0',
     this.pickReason = '',
+    this.aiRanked = false,
   });
 
   final int id;
@@ -34,6 +35,7 @@ class ProductModel {
   final String model3dUrl;
   final String previewScale;
   final String pickReason;
+  final bool aiRanked;
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     return ProductModel(
@@ -53,6 +55,7 @@ class ProductModel {
       model3dUrl: json['model_3d_url'] as String? ?? '',
       previewScale: json['preview_scale']?.toString() ?? '1.0',
       pickReason: json['pick_reason'] as String? ?? '',
+      aiRanked: json['ai_ranked'] as bool? ?? false,
     );
   }
 }

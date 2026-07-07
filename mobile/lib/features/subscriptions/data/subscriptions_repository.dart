@@ -59,6 +59,14 @@ class SubscriptionsRepository {
     return UserSubscriptionModel.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<List<SubscriptionFulfillmentModel>> fetchFulfillments() async {
+    final response = await _dio.get('/subscriptions/fulfillments/');
+    final data = response.data as Map<String, dynamic>;
+    return (data['fulfillments'] as List<dynamic>)
+        .map((e) => SubscriptionFulfillmentModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   String parseError(DioException e) {
     final data = e.response?.data;
     if (data is Map && data['detail'] != null) return data['detail'].toString();

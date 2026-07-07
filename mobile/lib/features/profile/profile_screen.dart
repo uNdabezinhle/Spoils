@@ -129,6 +129,20 @@ class ProfileScreen extends ConsumerWidget {
                       onTap: () => context.push('/subscriptions'),
                     ),
                     ListTile(
+                      leading: const Icon(Icons.inventory_2_outlined, color: SpoilColors.teal),
+                      title: const Text('Your box'),
+                      subtitle: const Text('Subscription fulfillment orders'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push('/subscriptions/box'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.settings_suggest_outlined, color: SpoilColors.teal),
+                      title: const Text('Integrations'),
+                      subtitle: const Text('Push & social login setup status'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push('/profile/integrations'),
+                    ),
+                    ListTile(
                       leading: const Icon(Icons.logout, color: SpoilColors.teal),
                       title: const Text('Sign out'),
                       onTap: () async {

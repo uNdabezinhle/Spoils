@@ -27,7 +27,9 @@ import '../../features/profile/screens/popia_screen.dart';
 import '../../features/reminders/my_people_screen.dart';
 import '../../features/reminders/screens/occasion_detail_screen.dart';
 import '../../features/shop/shop_screen.dart';
+import '../../features/subscriptions/screens/subscription_box_screen.dart';
 import '../../features/subscriptions/screens/subscriptions_screen.dart';
+import '../../features/profile/screens/integrations_screen.dart';
 import '../../features/splash/splash_screen.dart';
 import '../../features/loyalty/screens/loyalty_screen.dart';
 import '../../features/group_gifts/screens/create_group_gift_screen.dart';
@@ -50,6 +52,8 @@ const _protectedPrefixes = [
   '/profile/data',
   '/cart',
   '/subscriptions',
+  '/subscriptions/box',
+  '/profile/integrations',
   '/profile/loyalty',
   '/group-gifts/create',
   '/support',
@@ -165,6 +169,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/subscriptions',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const SubscriptionsScreen(),
+      ),
+      GoRoute(
+        path: '/subscriptions/box',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SubscriptionBoxScreen(),
+      ),
+      GoRoute(
+        path: '/profile/integrations',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const IntegrationsScreen(),
       ),
       GoRoute(
         path: '/profile/loyalty',

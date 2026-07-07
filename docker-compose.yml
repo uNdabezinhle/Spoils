@@ -27,9 +27,9 @@ services:
     command: >
       sh -c "python manage.py migrate &&
       if [ \"$$DJANGO_USE_RUNSERVER\" = \"true\" ]; then
-        python manage.py runserver 0.0.0.0:8000;
+        daphne -b 0.0.0.0 -p 8000 spoil.asgi:application;
       else
-        gunicorn spoil.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120;
+        daphne -b 0.0.0.0 -p 8000 spoil.asgi:application;
       fi"
     volumes:
       - ./backend:/app

@@ -52,8 +52,11 @@ All eight MVP phases are implemented on `main`:
 | Gift suggestion “why we picked this” | ✅ | ✅ |
 | Leave family group | ✅ | ✅ |
 | Group gift cancel & refunds | ✅ | ✅ |
-| Subscription box fulfillment on renewal | ✅ | — (order + push) |
-| Live chat incremental polling | ✅ | ✅ |
+| Subscription box fulfillment on renewal | ✅ | ✅ |
+| Live chat WebSocket (+ REST fallback) | ✅ | ✅ |
+| True AR (ARCore/ARKit via 3D model) | ✅ | ✅ |
+| AI gift recommendations (OpenAI optional) | ✅ | ✅ |
+| Push / social login build-time status | — | ✅ |
 
 ## Quick start
 
@@ -103,7 +106,7 @@ flutter run --dart-define=API_BASE_URL=http://192.168.1.x:8000/api/v1
 
 ### 4. Tests
 
-**API smoke tests (30):**
+**API smoke tests (31):**
 
 ```bash
 cd backend

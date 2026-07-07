@@ -7,6 +7,7 @@ import 'package:spoil/features/reminders/providers/reminders_provider.dart';
 import 'package:spoil/features/reminders/screens/occasion_detail_screen.dart';
 import 'package:spoil/features/subscriptions/models/subscription_models.dart';
 import 'package:spoil/features/subscriptions/providers/subscriptions_provider.dart';
+import 'package:spoil/features/subscriptions/screens/subscription_box_screen.dart';
 import 'package:spoil/features/subscriptions/screens/subscriptions_screen.dart';
 
 void main() {
@@ -130,5 +131,20 @@ void main() {
     expect(find.text('Available plans'), findsOneWidget);
     expect(find.text('Monthly Spoil Box'), findsOneWidget);
     expect(find.text('Subscribe'), findsWidgets);
+  });
+
+  testWidgets('SubscriptionBoxScreen shows empty state', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          subscriptionFulfillmentsProvider.overrideWith((ref) async => []),
+        ],
+        child: const MaterialApp(home: SubscriptionBoxScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Your box'), findsOneWidget);
+    expect(find.text('No subscription boxes yet'), findsOneWidget);
   });
 }

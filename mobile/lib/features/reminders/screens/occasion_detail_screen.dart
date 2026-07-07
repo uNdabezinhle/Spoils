@@ -498,14 +498,26 @@ class _SuggestionCard extends StatelessWidget {
         if (product.pickReason.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              'Why we picked this: ${product.pickReason}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: SpoilColors.charcoalMuted,
-                    fontStyle: FontStyle.italic,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (product.aiRanked)
+                  const Padding(
+                    padding: EdgeInsets.only(right: 4, top: 1),
+                    child: Icon(Icons.auto_awesome, size: 14, color: SpoilColors.gold),
                   ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
+                Expanded(
+                  child: Text(
+                    product.pickReason,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: SpoilColors.charcoalMuted,
+                          fontStyle: FontStyle.italic,
+                        ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
       ],

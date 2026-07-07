@@ -37,6 +37,17 @@ class SubscriptionsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
+            Card(
+              color: SpoilColors.cream,
+              child: ListTile(
+                leading: const Icon(Icons.inventory_2_outlined, color: SpoilColors.teal),
+                title: const Text('Your box'),
+                subtitle: const Text('See past & upcoming subscription deliveries'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/subscriptions/box'),
+              ),
+            ),
+            const SizedBox(height: 16),
             subsAsync.when(
               loading: () => const Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),

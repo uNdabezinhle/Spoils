@@ -36,4 +36,11 @@ class SupportConversationAdmin(admin.ModelAdmin):
                     body=instance.body[:120],
                     data={"type": "support_message", "conversation_id": str(conversation.id)},
                 )
+                from .broadcast import broadcast_support_message
+                from .serializers import SupportMessageSerializer
+
+                broadcast_support_message(
+                    user_id=conversation.user_id,
+                    payload=SupportMessageSerializer(instance).data,
+                )
         formset.save_m2m()

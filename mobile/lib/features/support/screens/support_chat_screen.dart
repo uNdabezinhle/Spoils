@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/storage/token_storage.dart';
 import '../../../core/theme/spoil_colors.dart';
 import '../data/support_repository.dart';
 import '../models/support_models.dart';
 import '../providers/support_provider.dart';
+import '../services/support_websocket_service.dart';
 
 class SupportChatScreen extends ConsumerStatefulWidget {
   const SupportChatScreen({super.key});
@@ -19,24 +21,72 @@ class SupportChatScreen extends ConsumerStatefulWidget {
 class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
+  final _socket = SupportWebSocketService();
   Timer? _pollTimer;
   List<SupportMessageModel> _messages = [];
   bool _loading = true;
+  bool _liveConnected = false;
+  bool _usingPolling = false;
   String? _lastMessageAt;
 
   @override
   void initState() {
     super.initState();
     _load();
-    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) => _pollNewMessages());
+    _connectWebSocket();
   }
 
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _socket.dispose();
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _connectWebSocket() async {
+    final token = await ref.read(tokenStorageProvider).getAccessToken();
+    if (token == null || token.isEmpty) {
+      _startPolling();
+      return;
+    }
+
+    _socket.connected.listen((connected) {
+      if (!mounted) return;
+      setState(() {
+        _liveConnected = connected;
+        _usingPolling = !connected;
+      });
+      if (!connected) {
+        _startPolling();
+      } else {
+        _pollTimer?.cancel();
+        _pollTimer = null;
+      }
+    });
+
+    _socket.messages.listen((message) {
+      if (!mounted) return;
+      if (_messages.any((m) => m.id == message.id)) return;
+      setState(() {
+        _messages = [..._messages, message];
+        _lastMessageAt = message.createdAt;
+      });
+      _scrollToEnd();
+    });
+
+    try {
+      await _socket.connect(accessToken: token);
+    } catch (_) {
+      _startPolling();
+    }
+  }
+
+  void _startPolling() {
+    if (_pollTimer != null) return;
+    setState(() => _usingPolling = true);
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) => _pollNewMessages());
   }
 
   Future<void> _load({bool silent = false}) async {
@@ -88,7 +138,14 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
     final body = _controller.text.trim();
     if (body.isEmpty) return;
     _controller.clear();
+
+    if (_liveConnected && _socket.isConnected) {
+      _socket.sendMessage(body);
+      return;
+    }
+
     final message = await ref.read(supportRepositoryProvider).sendMessage(body);
+    if (!mounted) return;
     setState(() {
       _messages = [..._messages, message];
       _lastMessageAt = message.createdAt;
@@ -99,6 +156,13 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final statusLabel = _liveConnected
+        ? 'Live'
+        : _usingPolling
+            ? 'Polling'
+            : 'Connecting…';
+    final statusColor = _liveConnected ? SpoilColors.teal : SpoilColors.gold;
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -110,9 +174,19 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: Center(
-              child: Text(
-                'Live',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: SpoilColors.teal),
+              child: Row(
+                children: [
+                  Icon(
+                    _liveConnected ? Icons.circle : Icons.sync,
+                    size: 10,
+                    color: statusColor,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    statusLabel,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(color: statusColor),
+                  ),
+                ],
               ),
             ),
           ),

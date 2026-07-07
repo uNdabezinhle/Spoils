@@ -78,6 +78,41 @@ class UserSubscriptionModel {
   }
 }
 
+class SubscriptionFulfillmentModel {
+  const SubscriptionFulfillmentModel({
+    required this.orderId,
+    required this.subscriptionId,
+    required this.status,
+    required this.deliveryDate,
+    required this.totalAmount,
+    required this.createdAt,
+    required this.productName,
+    this.productImageUrl = '',
+  });
+
+  final int orderId;
+  final int subscriptionId;
+  final String status;
+  final String deliveryDate;
+  final String totalAmount;
+  final String createdAt;
+  final String productName;
+  final String productImageUrl;
+
+  factory SubscriptionFulfillmentModel.fromJson(Map<String, dynamic> json) {
+    return SubscriptionFulfillmentModel(
+      orderId: json['order_id'] as int,
+      subscriptionId: json['subscription_id'] as int,
+      status: json['status'] as String,
+      deliveryDate: json['delivery_date'] as String? ?? '',
+      createdAt: json['created_at'] as String? ?? '',
+      totalAmount: json['total_amount']?.toString() ?? '0',
+      productName: json['product_name'] as String? ?? 'Spoil Box',
+      productImageUrl: json['product_image_url'] as String? ?? '',
+    );
+  }
+}
+
 class SubscriptionPaymentInitResult {
   const SubscriptionPaymentInitResult({
     required this.subscriptionId,

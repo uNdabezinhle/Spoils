@@ -51,7 +51,11 @@ def conversation_detail(request):
     message = SupportMessage.objects.create(conversation=conversation, sender_type="user", body=body)
     conversation.last_message_at = timezone.now()
     conversation.save(update_fields=["last_message_at"])
-    return Response(SupportMessageSerializer(message).data, status=status.HTTP_201_CREATED)
+    from .broadcast import broadcast_support_message
+
+    payload = SupportMessageSerializer(message).data
+    broadcast_support_message(user_id=request.user.id, payload=payload)
+    return Response(payload, status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])

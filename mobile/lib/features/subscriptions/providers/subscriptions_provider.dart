@@ -12,3 +12,9 @@ final mySubscriptionsProvider = FutureProvider.autoDispose<List<UserSubscription
   if (!ref.watch(authProvider).isAuthenticated) return [];
   return ref.read(subscriptionsRepositoryProvider).fetchMySubscriptions();
 });
+
+final subscriptionFulfillmentsProvider =
+    FutureProvider.autoDispose<List<SubscriptionFulfillmentModel>>((ref) async {
+  if (!ref.watch(authProvider).isAuthenticated) return [];
+  return ref.read(subscriptionsRepositoryProvider).fetchFulfillments();
+});

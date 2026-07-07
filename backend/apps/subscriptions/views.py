@@ -86,6 +86,14 @@ def subscribe_verify(request):
     )
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def subscription_fulfillments(request):
+    from .services.fulfillment_list import list_subscription_fulfillments
+
+    return Response({"fulfillments": list_subscription_fulfillments(user=request.user)})
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def cancel_subscription(request, pk):
