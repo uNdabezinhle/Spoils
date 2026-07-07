@@ -92,6 +92,33 @@ class Command(BaseCommand):
                 },
             )
 
+        # Native AR demo — preview in your space via ARCore / ARKit (GLB from Khronos sample models)
+        Product.objects.update_or_create(
+            slug="ar-luxury-gift-box",
+            defaults={
+                "name": "Luxury Gift Box (AR Preview)",
+                "category": categories["hampers"],
+                "description": (
+                    "A curated luxury hamper in a premium presentation box. "
+                    "Use Preview in your space to place the 3D box in your room before you order."
+                ),
+                "base_price": Decimal("549.00"),
+                "image_url": "https://images.unsplash.com/photo-1549465220-1a0b6e55668e?w=600&h=600&fit=crop",
+                "delivery_info": "2–3 business days nationwide",
+                "occasion": "just_because",
+                "is_featured": True,
+                "is_popular": False,
+                "is_active": True,
+                "ar_enabled": True,
+                "preview_mode": "model_3d",
+                "model_3d_url": (
+                    "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/"
+                    "master/2.0/Box/glTF-Binary/Box.glb"
+                ),
+                "preview_scale": Decimal("1.20"),
+            },
+        )
+
         wrapping_data = [
             ("Classic Cream", "#FDF8F3", "0.00"),
             ("Warm Gold Ribbon", "#C9A227", "49.00"),
