@@ -108,6 +108,20 @@ class ProfileScreen extends ConsumerWidget {
                       onTap: () => context.push('/profile/addresses'),
                     ),
                     ListTile(
+                      leading: const Icon(Icons.stars_outlined, color: SpoilColors.teal),
+                      title: const Text('Spoil Points'),
+                      subtitle: const Text('Earn & redeem loyalty rewards'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push('/profile/loyalty'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.chat_bubble_outline, color: SpoilColors.teal),
+                      title: const Text('Live chat'),
+                      subtitle: const Text('Chat with our support team'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push('/support'),
+                    ),
+                    ListTile(
                       leading: const Icon(Icons.autorenew, color: SpoilColors.teal),
                       title: const Text('Subscriptions'),
                       subtitle: const Text('Monthly spoil plans & gift credit'),

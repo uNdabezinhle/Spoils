@@ -29,6 +29,12 @@ import '../../features/reminders/screens/occasion_detail_screen.dart';
 import '../../features/shop/shop_screen.dart';
 import '../../features/subscriptions/screens/subscriptions_screen.dart';
 import '../../features/splash/splash_screen.dart';
+import '../../features/loyalty/screens/loyalty_screen.dart';
+import '../../features/group_gifts/screens/create_group_gift_screen.dart';
+import '../../features/group_gifts/screens/group_gift_contribute_screen.dart';
+import '../../features/group_gifts/screens/group_gift_detail_screen.dart';
+import '../../features/support/screens/support_chat_screen.dart';
+import '../../features/ar_preview/screens/ar_preview_screen.dart';
 import '../theme/spoil_colors.dart';
 import '../theme/spoil_decorations.dart';
 
@@ -44,6 +50,9 @@ const _protectedPrefixes = [
   '/profile/data',
   '/cart',
   '/subscriptions',
+  '/profile/loyalty',
+  '/group-gifts/create',
+  '/support',
 ];
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -151,6 +160,37 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/subscriptions',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const SubscriptionsScreen(),
+      ),
+      GoRoute(
+        path: '/profile/loyalty',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const LoyaltyScreen(),
+      ),
+      GoRoute(
+        path: '/support',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SupportChatScreen(),
+      ),
+      GoRoute(
+        path: '/group-gifts/create',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CreateGroupGiftScreen(),
+      ),
+      GoRoute(
+        path: '/group-gift/:token',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => GroupGiftDetailScreen(token: state.pathParameters['token']!),
+        routes: [
+          GoRoute(
+            path: 'contribute',
+            builder: (context, state) => GroupGiftContributeScreen(token: state.pathParameters['token']!),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/product/:slug/ar',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ArPreviewScreen(slug: state.pathParameters['slug']!),
       ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,

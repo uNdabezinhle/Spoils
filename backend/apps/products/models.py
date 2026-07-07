@@ -37,6 +37,14 @@ class Product(models.Model):
     is_popular = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     occasion = models.CharField(max_length=30, choices=OCCASION_CHOICES, blank=True, default="")
+    ar_enabled = models.BooleanField(default=True)
+    preview_mode = models.CharField(
+        max_length=20,
+        choices=[("image", "Image overlay"), ("model_3d", "3D model")],
+        default="image",
+    )
+    model_3d_url = models.URLField(blank=True)
+    preview_scale = models.DecimalField(max_digits=4, decimal_places=2, default=1.0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

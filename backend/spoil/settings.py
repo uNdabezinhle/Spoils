@@ -33,6 +33,9 @@ INSTALLED_APPS = [
     "apps.reminders",
     "apps.content",
     "apps.subscriptions",
+    "apps.loyalty",
+    "apps.group_gifts",
+    "apps.support",
 ]
 
 MIDDLEWARE = [

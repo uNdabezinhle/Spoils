@@ -32,18 +32,36 @@ def _address_to_dict(address: Address) -> dict:
     }
 
 
-def calculate_order_totals(cart, delivery_type: str, promo: PromoCode | None = None) -> dict:
+def calculate_order_totals(
+    cart,
+    delivery_type: str,
+    promo: PromoCode | None = None,
+    *,
+    user=None,
+    points_to_redeem: int = 0,
+) -> dict:
     serialized = serialize_cart(cart)
     subtotal = Decimal(serialized["subtotal"])
     delivery_fee = DELIVERY_FEES.get(delivery_type, DELIVERY_FEES["standard"])
     discount = Decimal("0")
     if promo:
         discount = (subtotal * Decimal(promo.discount_percent) / Decimal("100")).quantize(Decimal("0.01"))
-    total = subtotal + delivery_fee - discount
+    points_discount = Decimal("0")
+    if user and points_to_redeem > 0:
+        from apps.loyalty.services.ledger import validate_points_redemption
+
+        points_discount = validate_points_redemption(
+            user=user,
+            points_to_redeem=points_to_redeem,
+            subtotal=subtotal,
+        )
+    total = subtotal + delivery_fee - discount - points_discount
     return {
         "subtotal": subtotal,
         "delivery_fee": delivery_fee,
         "discount": discount,
+        "points_discount": points_discount,
+        "points_to_redeem": points_to_redeem if points_discount > 0 else 0,
         "total": max(total, Decimal("0.01")),
     }
 
@@ -56,6 +74,7 @@ def create_order_from_cart(
     delivery_date: date,
     delivery_type: str = "standard",
     promo_code: str | None = None,
+    points_to_redeem: int = 0,
 ) -> Order:
     try:
         address = user.addresses.get(pk=address_id)
@@ -74,7 +93,7 @@ def create_order_from_cart(
         if promo.expires_at and promo.expires_at < timezone.now():
             raise ValueError("This promo code has expired.")
 
-    totals = calculate_order_totals(cart, delivery_type, promo)
+    totals = calculate_order_totals(cart, delivery_type, promo, user=user, points_to_redeem=points_to_redeem)
 
     order = Order.objects.create(
         user=user,
@@ -84,6 +103,8 @@ def create_order_from_cart(
         delivery_date=delivery_date,
         delivery_type=delivery_type,
         promo_code=promo,
+        points_redeemed=totals["points_to_redeem"],
+        points_discount=totals["points_discount"],
     )
 
     for item in cart.items.select_related("product"):
@@ -177,6 +198,14 @@ def mark_order_paid(order: Order, reference: str) -> Order:
     from .notifications import notify_order_status_change
 
     notify_order_status_change(order=order, previous_status=previous_status)
+
+    if order.points_redeemed > 0:
+        from apps.loyalty.services.ledger import redeem_points
+
+        redeem_points(user=order.user, points=order.points_redeemed, order=order)
+    from apps.loyalty.services.ledger import earn_for_order
+
+    earn_for_order(order=order)
     return order
 
 

@@ -117,6 +117,7 @@ def checkout_preview(request):
 
     delivery_type = request.data.get("delivery_type", "standard")
     promo_code = request.data.get("promo_code")
+    points_to_redeem = int(request.data.get("points_to_redeem", 0) or 0)
 
     from .models import PromoCode
     from django.utils import timezone
@@ -129,11 +130,22 @@ def checkout_preview(request):
         if promo.expires_at and promo.expires_at < timezone.now():
             return Response({"promo_code": "This promo code has expired."}, status=400)
 
-    totals = calculate_order_totals(cart, delivery_type, promo)
+    try:
+        totals = calculate_order_totals(
+            cart,
+            delivery_type,
+            promo,
+            user=request.user,
+            points_to_redeem=points_to_redeem,
+        )
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=400)
     return Response({
         "subtotal": str(totals["subtotal"]),
         "delivery_fee": str(totals["delivery_fee"]),
         "discount": str(totals["discount"]),
+        "points_discount": str(totals["points_discount"]),
+        "points_to_redeem": totals["points_to_redeem"],
         "total": str(totals["total"]),
         "demo_mode": is_demo_mode(),
     })
@@ -146,6 +158,7 @@ def checkout_initiate(request):
     delivery_date_str = request.data.get("delivery_date")
     delivery_type = request.data.get("delivery_type", "standard")
     promo_code = request.data.get("promo_code")
+    points_to_redeem = int(request.data.get("points_to_redeem", 0) or 0)
 
     if not address_id or not delivery_date_str:
         return Response({"detail": "address_id and delivery_date are required."}, status=400)
@@ -162,6 +175,7 @@ def checkout_initiate(request):
             delivery_date=delivery_date,
             delivery_type=delivery_type,
             promo_code=promo_code,
+            points_to_redeem=points_to_redeem,
         )
         payment = initiate_payment(order)
     except ValueError as exc:
@@ -234,7 +248,18 @@ def paystack_webhook(request):
                     sub = UserSubscription.objects.select_related("plan").get(paystack_reference=reference)
                     verify_subscription_payment(sub=sub, reference=reference)
                 except UserSubscription.DoesNotExist:
-                    pass
+                    from apps.group_gifts.models import GroupGiftContribution
+                    from apps.group_gifts.services.checkout import verify_contribution
+
+                    try:
+                        contribution = GroupGiftContribution.objects.select_related("group_gift").get(
+                            paystack_reference=reference
+                        )
+                        verify_contribution(contribution=contribution, reference=reference)
+                    except GroupGiftContribution.DoesNotExist:
+                        pass
+                    except Exception:
+                        pass
                 except Exception:
                     pass
     return Response({"status": "ok"})

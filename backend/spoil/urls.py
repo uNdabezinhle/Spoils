@@ -26,6 +26,9 @@ urlpatterns = [
     path("api/v1/content/", include("apps.content.urls")),
     path("api/v1/subscriptions/", include("apps.subscriptions.urls")),
     path("api/v1/analytics/overview/", analytics_overview, name="analytics-overview"),
+    path("api/v1/loyalty/", include("apps.loyalty.urls")),
+    path("api/v1/group-gifts/", include("apps.group_gifts.urls")),
+    path("api/v1/support/", include("apps.support.urls")),
 ]
 
 if settings.DEBUG:

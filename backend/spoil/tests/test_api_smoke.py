@@ -327,6 +327,103 @@ class PostMvpSmokeTests(APITestCase):
         self.assertEqual(proposal.status, "ordered")
 
 
+class GrowthFeaturesSmokeTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="growth@example.com",
+            email="growth@example.com",
+            password="securepass123",
+        )
+        self.client.force_authenticate(user=self.user)
+
+    def test_loyalty_and_support(self):
+        loyalty = self.client.get("/api/v1/loyalty/me/")
+        self.assertEqual(loyalty.status_code, status.HTTP_200_OK)
+        self.assertEqual(loyalty.json()["balance"], 0)
+
+        convo = self.client.get("/api/v1/support/conversation/")
+        self.assertEqual(convo.status_code, status.HTTP_200_OK)
+        self.assertIn("messages", convo.json())
+
+        send = self.client.post("/api/v1/support/conversation/", {"body": "Need help with delivery"}, format="json")
+        self.assertEqual(send.status_code, status.HTTP_201_CREATED)
+
+    @override_settings(PAYSTACK_SECRET_KEY="", PAYSTACK_PUBLIC_KEY="")
+    def test_group_gift_public_and_contribute(self):
+        category = Category.objects.create(name="Hampers", slug="hampers")
+        product = Product.objects.create(
+            category=category,
+            name="Celebration Hamper",
+            slug="celebration-hamper",
+            description="A hamper.",
+            base_price="599.00",
+            is_active=True,
+        )
+        address = self.client.post(
+            "/api/v1/auth/addresses/",
+            {
+                "label": "Home",
+                "recipient_name": "Team",
+                "phone": "0821234567",
+                "street_address": "1 Main Rd",
+                "suburb": "Sandton",
+                "city": "Johannesburg",
+                "province": "Gauteng",
+                "postal_code": "2196",
+            },
+            format="json",
+        )
+        self.client.post(
+            f"/api/v1/orders/cart/items/",
+            {"product_id": product.id, "quantity": 1},
+            format="json",
+        )
+
+        gift = self.client.post(
+            "/api/v1/group-gifts/",
+            {
+                "title": "Team birthday gift",
+                "address_id": address.json()["id"],
+                "delivery_date": (date.today() + timedelta(days=10)).isoformat(),
+                "recipient_name": "Sarah",
+            },
+            format="json",
+        )
+        self.assertEqual(gift.status_code, status.HTTP_201_CREATED)
+        token = gift.json()["share_token"]
+
+        public = self.client.get(f"/api/v1/group-gifts/public/{token}/")
+        self.assertEqual(public.status_code, status.HTTP_200_OK)
+
+        self.client.force_authenticate(user=None)
+        initiate = self.client.post(
+            f"/api/v1/group-gifts/public/{token}/contribute/",
+            {
+                "amount": "100.00",
+                "contributor_name": "Friend",
+                "contributor_email": "friend@example.com",
+            },
+            format="json",
+        )
+        self.assertEqual(initiate.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(initiate.json().get("demo_mode"))
+
+    def test_product_ar_fields(self):
+        category = Category.objects.create(name="Gifts", slug="gifts")
+        Product.objects.create(
+            category=category,
+            name="AR Gift Box",
+            slug="ar-gift-box",
+            description="Preview in AR.",
+            base_price="299.00",
+            ar_enabled=True,
+            preview_mode="image",
+        )
+        detail = self.client.get("/api/v1/products/ar-gift-box/")
+        self.assertEqual(detail.status_code, status.HTTP_200_OK)
+        self.assertTrue(detail.json().get("ar_enabled"))
+
+
 class AnalyticsSmokeTests(APITestCase):
     def setUp(self):
         self.staff = User.objects.create_user(

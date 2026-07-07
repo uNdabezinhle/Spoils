@@ -11,6 +11,10 @@ class ProductModel {
     this.deliveryInfo = '',
     this.isFeatured = false,
     this.isPopular = false,
+    this.arEnabled = true,
+    this.previewMode = 'image',
+    this.model3dUrl = '',
+    this.previewScale = '1.0',
   });
 
   final int id;
@@ -24,6 +28,10 @@ class ProductModel {
   final String deliveryInfo;
   final bool isFeatured;
   final bool isPopular;
+  final bool arEnabled;
+  final String previewMode;
+  final String model3dUrl;
+  final String previewScale;
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     return ProductModel(
@@ -38,6 +46,10 @@ class ProductModel {
       deliveryInfo: json['delivery_info'] as String? ?? '',
       isFeatured: json['is_featured'] as bool? ?? false,
       isPopular: json['is_popular'] as bool? ?? false,
+      arEnabled: json['ar_enabled'] as bool? ?? true,
+      previewMode: json['preview_mode'] as String? ?? 'image',
+      model3dUrl: json['model_3d_url'] as String? ?? '',
+      previewScale: json['preview_scale']?.toString() ?? '1.0',
     );
   }
 }

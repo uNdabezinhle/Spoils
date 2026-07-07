@@ -121,6 +121,8 @@ class CheckoutPreview {
     required this.discount,
     required this.total,
     required this.demoMode,
+    this.pointsDiscount = '0',
+    this.pointsToRedeem = 0,
   });
 
   final String subtotal;
@@ -128,6 +130,8 @@ class CheckoutPreview {
   final String discount;
   final String total;
   final bool demoMode;
+  final String pointsDiscount;
+  final int pointsToRedeem;
 
   factory CheckoutPreview.fromJson(Map<String, dynamic> json) {
     return CheckoutPreview(
@@ -136,6 +140,8 @@ class CheckoutPreview {
       discount: json['discount'].toString(),
       total: json['total'].toString(),
       demoMode: json['demo_mode'] as bool? ?? false,
+      pointsDiscount: json['points_discount']?.toString() ?? '0',
+      pointsToRedeem: json['points_to_redeem'] as int? ?? 0,
     );
   }
 }

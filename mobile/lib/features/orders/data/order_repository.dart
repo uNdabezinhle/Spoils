@@ -16,10 +16,12 @@ class OrderRepository {
   Future<CheckoutPreview> previewCheckout({
     required String deliveryType,
     String? promoCode,
+    int pointsToRedeem = 0,
   }) async {
     final response = await _dio.post('/orders/checkout/preview/', data: {
       'delivery_type': deliveryType,
       if (promoCode != null && promoCode.isNotEmpty) 'promo_code': promoCode,
+      if (pointsToRedeem > 0) 'points_to_redeem': pointsToRedeem,
     });
     return CheckoutPreview.fromJson(response.data as Map<String, dynamic>);
   }
@@ -29,12 +31,14 @@ class OrderRepository {
     required String deliveryDate,
     required String deliveryType,
     String? promoCode,
+    int pointsToRedeem = 0,
   }) async {
     final response = await _dio.post('/orders/checkout/initiate/', data: {
       'address_id': addressId,
       'delivery_date': deliveryDate,
       'delivery_type': deliveryType,
       if (promoCode != null && promoCode.isNotEmpty) 'promo_code': promoCode,
+      if (pointsToRedeem > 0) 'points_to_redeem': pointsToRedeem,
     });
     return PaymentInitResult.fromJson(response.data as Map<String, dynamic>);
   }

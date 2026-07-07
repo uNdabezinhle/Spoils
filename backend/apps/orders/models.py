@@ -52,6 +52,8 @@ class Order(models.Model):
     delivery_date = models.DateField()
     delivery_type = models.CharField(max_length=20, choices=DELIVERY_CHOICES, default="standard")
     paystack_reference = models.CharField(max_length=100, blank=True)
+    points_redeemed = models.PositiveIntegerField(default=0)
+    points_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     promo_code = models.ForeignKey(PromoCode, null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

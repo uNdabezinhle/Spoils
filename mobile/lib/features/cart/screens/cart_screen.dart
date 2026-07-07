@@ -201,6 +201,15 @@ class _CartSummary extends StatelessWidget {
                 child: const Text('Proceed to checkout'),
               ),
             ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => context.push('/group-gifts/create'),
+                icon: const Icon(Icons.people_outline),
+                label: const Text('Split with friends'),
+              ),
+            ),
           ],
         ),
       ),

@@ -26,6 +26,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "occasion",
             "is_featured",
             "is_popular",
+            "ar_enabled",
         )
 
 
@@ -46,4 +47,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "occasion",
             "is_featured",
             "is_popular",
+            "ar_enabled",
+            "preview_mode",
+            "model_3d_url",
+            "preview_scale",
         )

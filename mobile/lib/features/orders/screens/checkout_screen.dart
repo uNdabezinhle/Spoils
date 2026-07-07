@@ -9,6 +9,7 @@ import '../../../shared/utils/currency_formatter.dart';
 import '../../auth/models/address_model.dart';
 import '../../auth/providers/address_provider.dart';
 import '../../cart/providers/cart_provider.dart';
+import '../../loyalty/providers/loyalty_provider.dart';
 import '../data/order_repository.dart';
 import '../models/order_model.dart';
 import '../providers/order_provider.dart';
@@ -30,6 +31,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   bool _loadingPreview = false;
   bool _paying = false;
   String? _error;
+  bool _usePoints = false;
+  int _pointsToRedeem = 0;
 
   @override
   void initState() {
@@ -55,6 +58,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       final preview = await ref.read(orderRepositoryProvider).previewCheckout(
             deliveryType: _deliveryType,
             promoCode: _promoController.text.trim().isEmpty ? null : _promoController.text.trim(),
+            pointsToRedeem: _usePoints ? _pointsToRedeem : 0,
           );
       if (mounted) {
         setState(() {
@@ -109,6 +113,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         deliveryDate: _deliveryDateStr,
         deliveryType: _deliveryType,
         promoCode: promo.isEmpty ? null : promo,
+        pointsToRedeem: _usePoints ? _pointsToRedeem : 0,
       );
 
       if (!mounted) return;
@@ -307,6 +312,38 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       Text(_error!, style: const TextStyle(color: Colors.redAccent)),
                     ],
                     const SizedBox(height: 24),
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final loyalty = ref.watch(loyaltyAccountProvider);
+                        return loyalty.when(
+                          data: (account) {
+                            if (account.balance <= 0) return const SizedBox.shrink();
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Spoil Points', style: Theme.of(context).textTheme.titleMedium),
+                                SwitchListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text('Use ${account.balance} points'),
+                                  subtitle: const Text('100 points = R10 off'),
+                                  value: _usePoints,
+                                  onChanged: (v) {
+                                    setState(() {
+                                      _usePoints = v;
+                                      _pointsToRedeem = v ? account.balance : 0;
+                                    });
+                                    _refreshPreview();
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+                              ],
+                            );
+                          },
+                          loading: () => const SizedBox.shrink(),
+                          error: (_, __) => const SizedBox.shrink(),
+                        );
+                      },
+                    ),
                     _OrderSummary(preview: _preview, loading: _loadingPreview),
                   ],
                 ),
@@ -441,6 +478,12 @@ class _OrderSummary extends StatelessWidget {
                 _SummaryRow(
                   label: 'Discount',
                   value: '-${formatZar(preview!.discount)}',
+                  valueColor: SpoilColors.teal,
+                ),
+              if (preview!.pointsToRedeem > 0)
+                _SummaryRow(
+                  label: 'Points (${preview!.pointsToRedeem})',
+                  value: '-${formatZar(preview!.pointsDiscount)}',
                   valueColor: SpoilColors.teal,
                 ),
               const Divider(),

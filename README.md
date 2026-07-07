@@ -34,6 +34,10 @@ All eight MVP phases are implemented on `main`:
 | Staff analytics API + admin dashboard | ✅ | — (admin web) |
 | Social login (Google / Apple) | ✅ | ✅ (needs OAuth IDs) |
 | Profile photo upload | ✅ | ✅ |
+| Loyalty points (earn & redeem) | ✅ | ✅ |
+| Group gift / split payments | ✅ | ✅ |
+| Live chat support | ✅ | ✅ |
+| AR product preview | ✅ | ✅ |
 
 ## Quick start
 
@@ -83,7 +87,7 @@ flutter run --dart-define=API_BASE_URL=http://192.168.1.x:8000/api/v1
 
 ### 4. Tests
 
-**API smoke tests (19):**
+**API smoke tests (22):**
 
 ```bash
 cd backend

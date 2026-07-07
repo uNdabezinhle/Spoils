@@ -49,6 +49,10 @@ class NotificationHandler {
       if (orderId != null) {
         _router.go('/orders/$orderId');
       }
+      return;
+    }
+    if (type == 'support_message') {
+      _router.go('/support');
     }
   }
 }

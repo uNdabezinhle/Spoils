@@ -118,6 +118,17 @@ class ProductDetailScreen extends ConsumerWidget {
                         child: const Text('Personalise & add to cart'),
                       ),
                     ),
+                    if (product.arEnabled) ...[
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => context.push('/product/$slug/ar'),
+                          icon: const Icon(Icons.view_in_ar_outlined),
+                          label: const Text('Preview in your space'),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     Text(
                       'Make it special with a message, photo, or beautiful wrapping.',
