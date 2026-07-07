@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AutoGiftProposal, Occasion, Recipient, ReminderLog
+from .models import AutoGiftProposal, FamilyGroup, FamilyMembership, Occasion, Recipient, ReminderLog
 
 
 class OccasionInline(admin.TabularInline):
@@ -30,6 +30,18 @@ class ReminderLogAdmin(admin.ModelAdmin):
     list_display = ("occasion", "sent_at", "status")
     list_filter = ("status", "sent_at")
     readonly_fields = ("occasion", "sent_at", "status")
+
+
+@admin.register(FamilyGroup)
+class FamilyGroupAdmin(admin.ModelAdmin):
+    list_display = ("name", "owner", "invite_code", "created_at")
+    search_fields = ("name", "owner__email", "invite_code")
+
+
+@admin.register(FamilyMembership)
+class FamilyMembershipAdmin(admin.ModelAdmin):
+    list_display = ("group", "user", "role", "joined_at")
+    list_filter = ("role",)
 
 
 @admin.register(AutoGiftProposal)

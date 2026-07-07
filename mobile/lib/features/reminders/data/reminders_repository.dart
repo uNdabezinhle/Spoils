@@ -63,6 +63,59 @@ class RemindersRepository {
     await _dio.post('/reminders/occasions/$occasionId/reject-gift/');
   }
 
+  Future<Map<String, dynamic>> importContacts(List<Map<String, dynamic>> contacts) async {
+    final response = await _dio.post('/reminders/import/contacts/', data: {'contacts': contacts});
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> importCalendarEvents(List<Map<String, dynamic>> events) async {
+    final response = await _dio.post('/reminders/import/calendar/', data: {'events': events});
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> updateSurpriseSettings(
+    int occasionId, {
+    bool? surpriseModeEnabled,
+    String? surpriseBudget,
+    bool? giftAnonymously,
+    bool? shareWithFamily,
+    int? surpriseAddressId,
+  }) async {
+    final response = await _dio.post('/reminders/occasions/$occasionId/surprise-settings/', data: {
+      if (surpriseModeEnabled != null) 'surprise_mode_enabled': surpriseModeEnabled,
+      if (surpriseBudget != null) 'surprise_budget': surpriseBudget,
+      if (giftAnonymously != null) 'gift_anonymously': giftAnonymously,
+      if (shareWithFamily != null) 'share_with_family': shareWithFamily,
+      if (surpriseAddressId != null) 'surprise_address_id': surpriseAddressId,
+    });
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<FamilyCalendarMonthModel> fetchFamilyCalendar({required int year, required int month}) async {
+    final response = await _dio.get('/reminders/family/calendar/', queryParameters: {'year': year, 'month': month});
+    return FamilyCalendarMonthModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<FamilyGroupModel?> fetchFamilyGroup() async {
+    final response = await _dio.get('/reminders/family/');
+    final data = response.data as Map<String, dynamic>;
+    final group = data['group'];
+    if (group == null) return null;
+    return FamilyGroupModel.fromJson(group as Map<String, dynamic>);
+  }
+
+  Future<FamilyGroupModel> createFamilyGroup(String name) async {
+    final response = await _dio.post('/reminders/family/', data: {'name': name});
+    final data = response.data as Map<String, dynamic>;
+    return FamilyGroupModel.fromJson(data['group'] as Map<String, dynamic>);
+  }
+
+  Future<FamilyGroupModel> joinFamilyGroup(String inviteCode) async {
+    final response = await _dio.post('/reminders/family/join/', data: {'invite_code': inviteCode});
+    final data = response.data as Map<String, dynamic>;
+    return FamilyGroupModel.fromJson(data['group'] as Map<String, dynamic>);
+  }
+
   Future<CalendarMonthModel> fetchCalendar({required int year, required int month}) async {
     final response = await _dio.get('/reminders/calendar/', queryParameters: {'year': year, 'month': month});
     return CalendarMonthModel.fromJson(response.data as Map<String, dynamic>);

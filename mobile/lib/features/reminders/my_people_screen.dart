@@ -6,8 +6,10 @@ import 'package:intl/intl.dart';
 import '../../core/theme/spoil_colors.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/spoil_text_field.dart';
+import 'data/reminders_repository.dart';
 import 'models/recipient_model.dart';
 import 'providers/reminders_provider.dart';
+import 'screens/family_calendar_view.dart';
 import 'screens/people_calendar_view.dart';
 
 String shopPathForOccasion(String type) => '/shop?occasion=$type';
@@ -30,7 +32,7 @@ class _MyPeopleScreenState extends ConsumerState<MyPeopleScreen> with SingleTick
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         setState(() => _tabIndex = _tabController.index);
@@ -59,6 +61,7 @@ class _MyPeopleScreenState extends ConsumerState<MyPeopleScreen> with SingleTick
           tabs: const [
             Tab(icon: Icon(Icons.people_outline), text: 'List'),
             Tab(icon: Icon(Icons.calendar_month_outlined), text: 'Calendar'),
+            Tab(icon: Icon(Icons.family_restroom_outlined), text: 'Family'),
           ],
         ),
       ),
@@ -81,8 +84,11 @@ class _MyPeopleScreenState extends ConsumerState<MyPeopleScreen> with SingleTick
             onAdd: () => _openForm(context, ref),
             onEdit: (recipient) => _openForm(context, ref, recipient: recipient),
             onDelete: (recipient) => _confirmDelete(context, ref, recipient),
+            onImportContacts: () => _importContacts(context, ref),
+            onImportCalendar: () => _importCalendar(context, ref),
           ),
           const PeopleCalendarView(),
+          const FamilyCalendarView(),
         ],
       ),
     );
@@ -98,6 +104,94 @@ class _MyPeopleScreenState extends ConsumerState<MyPeopleScreen> with SingleTick
       ref.invalidate(upcomingOccasionsProvider);
       ref.invalidate(occasionCalendarProvider);
     });
+  }
+
+  Future<void> _importContacts(BuildContext context, WidgetRef ref) async {
+    final consented = await _confirmPopiaImport(context, 'contacts');
+    if (consented != true || !context.mounted) return;
+
+    final service = ref.read(deviceImportServiceProvider);
+    final contacts = await service.fetchContacts();
+    if (!context.mounted) return;
+    if (contacts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No contacts found or permission denied.')),
+      );
+      return;
+    }
+
+    try {
+      final result = await ref.read(remindersRepositoryProvider).importContacts(
+            contacts.map((c) => {...c, 'popia_consent': true}).toList(),
+          );
+      ref.invalidate(recipientsProvider);
+      ref.invalidate(upcomingOccasionsProvider);
+      ref.invalidate(occasionCalendarProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Imported ${result['created']} contacts (${result['skipped']} skipped).')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Import failed: $e')));
+      }
+    }
+  }
+
+  Future<void> _importCalendar(BuildContext context, WidgetRef ref) async {
+    final consented = await _confirmPopiaImport(context, 'calendar events');
+    if (consented != true || !context.mounted) return;
+
+    final service = ref.read(deviceImportServiceProvider);
+    final events = await service.fetchCalendarEvents();
+    if (!context.mounted) return;
+    if (events.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No calendar events found or permission denied.')),
+      );
+      return;
+    }
+
+    try {
+      final result = await ref.read(remindersRepositoryProvider).importCalendarEvents(
+            events.map((e) => {...e, 'popia_consent': true}).toList(),
+          );
+      ref.invalidate(recipientsProvider);
+      ref.invalidate(upcomingOccasionsProvider);
+      ref.invalidate(occasionCalendarProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Added ${result['occasions_created']} occasions '
+              '(${result['recipients_created']} new people, ${result['skipped']} skipped).',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Import failed: $e')));
+      }
+    }
+  }
+
+  Future<bool?> _confirmPopiaImport(BuildContext context, String source) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Import from $source'),
+        content: Text(
+          'Spoils will read your device $source to add people and occasions. '
+          'You consent to storing this information for reminders (POPIA).',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Import')),
+        ],
+      ),
+    );
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref, RecipientModel recipient) async {
@@ -127,6 +221,8 @@ class _PeopleListTab extends ConsumerWidget {
     required this.onAdd,
     required this.onEdit,
     required this.onDelete,
+    required this.onImportContacts,
+    required this.onImportCalendar,
   });
 
   final AsyncValue<List<RecipientModel>> recipientsAsync;
@@ -136,6 +232,8 @@ class _PeopleListTab extends ConsumerWidget {
   final VoidCallback onAdd;
   final void Function(RecipientModel recipient) onEdit;
   final Future<void> Function(RecipientModel recipient) onDelete;
+  final VoidCallback onImportContacts;
+  final VoidCallback onImportCalendar;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -204,6 +302,26 @@ class _PeopleListTab extends ConsumerWidget {
                         : null,
                   ),
                   onChanged: (value) => onQueryChanged(value.trim()),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: onImportContacts,
+                        icon: const Icon(Icons.contacts_outlined, size: 18),
+                        label: const Text('Contacts'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: onImportCalendar,
+                        icon: const Icon(Icons.event_outlined, size: 18),
+                        label: const Text('Calendar'),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 upcomingAsync.when(

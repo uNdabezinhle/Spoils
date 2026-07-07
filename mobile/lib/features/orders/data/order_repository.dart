@@ -32,6 +32,8 @@ class OrderRepository {
     required String deliveryType,
     String? promoCode,
     int pointsToRedeem = 0,
+    bool isAnonymousGift = false,
+    int? occasionId,
   }) async {
     final response = await _dio.post('/orders/checkout/initiate/', data: {
       'address_id': addressId,
@@ -39,6 +41,8 @@ class OrderRepository {
       'delivery_type': deliveryType,
       if (promoCode != null && promoCode.isNotEmpty) 'promo_code': promoCode,
       if (pointsToRedeem > 0) 'points_to_redeem': pointsToRedeem,
+      if (isAnonymousGift) 'is_anonymous_gift': true,
+      if (occasionId != null) 'occasion_id': occasionId,
     });
     return PaymentInitResult.fromJson(response.data as Map<String, dynamic>);
   }

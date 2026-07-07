@@ -85,6 +85,8 @@ def create_proposal_for_occasion(*, occasion: Occasion, subscription: UserSubscr
         return None
     if occasion.snoozed_until and today <= occasion.snoozed_until:
         return None
+    if occasion.surprise_mode_enabled:
+        return None
 
     approval_start = next_date - timedelta(days=APPROVAL_WINDOW_DAYS)
     if today < approval_start or today > next_date:
@@ -149,6 +151,8 @@ def approve_proposal(*, proposal: AutoGiftProposal, address_id: int, product_id:
         product=product,
         address_id=address_id,
         delivery_date=proposal.delivery_date,
+        is_anonymous_gift=proposal.occasion.gift_anonymously,
+        occasion_id=proposal.occasion_id,
     )
 
     charged = False

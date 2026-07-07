@@ -5,6 +5,9 @@ import '../../auth/providers/auth_provider.dart';
 import '../../catalog/models/product_model.dart';
 import '../data/reminders_repository.dart';
 import '../models/recipient_model.dart';
+import '../services/device_import_service.dart';
+
+final deviceImportServiceProvider = Provider<DeviceImportService>((ref) => DeviceImportService());
 
 final recipientsProvider = FutureProvider.autoDispose<List<RecipientModel>>((ref) async {
   if (!ref.watch(authProvider).isAuthenticated) return [];
@@ -32,6 +35,16 @@ final occasionSuggestionsProvider = FutureProvider.autoDispose.family<List<Produ
 final occasionCalendarProvider =
     FutureProvider.autoDispose.family<CalendarMonthModel, (int, int)>((ref, params) async {
   return ref.read(remindersRepositoryProvider).fetchCalendar(year: params.$1, month: params.$2);
+});
+
+final familyGroupProvider = FutureProvider.autoDispose<FamilyGroupModel?>((ref) async {
+  if (!ref.watch(authProvider).isAuthenticated) return null;
+  return ref.read(remindersRepositoryProvider).fetchFamilyGroup();
+});
+
+final familyCalendarProvider =
+    FutureProvider.autoDispose.family<FamilyCalendarMonthModel, (int, int)>((ref, params) async {
+  return ref.read(remindersRepositoryProvider).fetchFamilyCalendar(year: params.$1, month: params.$2);
 });
 
 final recipientFormProvider = StateNotifierProvider.autoDispose<RecipientFormNotifier, AsyncValue<void>>((ref) {

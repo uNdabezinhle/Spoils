@@ -38,6 +38,10 @@ All eight MVP phases are implemented on `main`:
 | Group gift / split payments | ✅ | ✅ |
 | Live chat support | ✅ | ✅ |
 | AR product preview | ✅ | ✅ |
+| Phone contacts & calendar import | ✅ | ✅ |
+| Surprise mode (autonomous gifting) | ✅ | ✅ |
+| Shared family calendars | ✅ | ✅ |
+| Anonymous gifting via reminders | ✅ | ✅ |
 
 ## Quick start
 
@@ -87,7 +91,7 @@ flutter run --dart-define=API_BASE_URL=http://192.168.1.x:8000/api/v1
 
 ### 4. Tests
 
-**API smoke tests (22):**
+**API smoke tests (25):**
 
 ```bash
 cd backend
@@ -120,7 +124,7 @@ docker compose exec api python manage.py smoke_check
 2. **Personalise** — Add message, photo, wrapping → add to cart
 3. **Checkout** — Address, delivery date, promo `SPOIL10` → pay (demo or Paystack)
 4. **Track** — Orders tab → status stepper, receipt, reorder
-5. **My People** — Add birthdays/anniversaries with POPIA consent; calendar & occasion detail
+5. **My People** — Add birthdays/anniversaries with POPIA consent; import contacts/calendar; family shared calendar; surprise mode & anonymous gifting
 6. **Subscriptions** — Profile → monthly spoil plans
 7. **Profile** — How it works, Privacy & Terms, export/delete data (POPIA)
 

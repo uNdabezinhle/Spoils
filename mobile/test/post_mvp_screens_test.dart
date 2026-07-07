@@ -23,6 +23,10 @@ void main() {
       daysUntil: 5,
     );
 
+    tester.view.physicalSize = const Size(400, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -48,6 +52,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Spoils reminder'), findsOneWidget);
+    expect(find.text('Gifting preferences'), findsOneWidget);
     expect(find.text('Gift suggestions'), findsOneWidget);
     expect(find.text("Test Partner's Birthday"), findsOneWidget);
     expect(find.text('Spring Bloom'), findsOneWidget);

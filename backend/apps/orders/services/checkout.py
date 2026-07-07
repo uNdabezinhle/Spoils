@@ -75,6 +75,8 @@ def create_order_from_cart(
     delivery_type: str = "standard",
     promo_code: str | None = None,
     points_to_redeem: int = 0,
+    is_anonymous_gift: bool = False,
+    occasion_id: int | None = None,
 ) -> Order:
     try:
         address = user.addresses.get(pk=address_id)
@@ -105,6 +107,8 @@ def create_order_from_cart(
         promo_code=promo,
         points_redeemed=totals["points_to_redeem"],
         points_discount=totals["points_discount"],
+        is_anonymous_gift=is_anonymous_gift,
+        occasion_id=occasion_id,
     )
 
     for item in cart.items.select_related("product"):
@@ -147,6 +151,8 @@ def create_order_for_product(
     delivery_date: date,
     delivery_type: str = "standard",
     quantity: int = 1,
+    is_anonymous_gift: bool = False,
+    occasion_id: int | None = None,
 ) -> Order:
     try:
         address = user.addresses.get(pk=address_id)
@@ -163,6 +169,8 @@ def create_order_for_product(
         delivery_address=_address_to_dict(address),
         delivery_date=delivery_date,
         delivery_type=delivery_type,
+        is_anonymous_gift=is_anonymous_gift,
+        occasion_id=occasion_id,
     )
     from ..models import OrderItem
 
@@ -213,9 +221,14 @@ def _send_confirmation_email(order: Order) -> None:
     user = order.user
     items = order.items.select_related("product")
     lines = [f"- {i.product.name} x{i.quantity} (R{i.unit_price * i.quantity})" for i in items]
+    anon_note = (
+        "\nThis gift will be delivered anonymously — your name won't appear on the package.\n"
+        if order.is_anonymous_gift
+        else ""
+    )
     body = (
         f"Hi {user.first_name or 'there'},\n\n"
-        f"Thank you for spoiling someone properly! Your order #{order.id} is confirmed.\n\n"
+        f"Thank you for spoiling someone properly! Your order #{order.id} is confirmed.{anon_note}\n\n"
         f"Delivery date: {order.delivery_date}\n"
         f"Total: R{order.total_amount}\n\n"
         f"Items:\n" + "\n".join(lines) + "\n\n"

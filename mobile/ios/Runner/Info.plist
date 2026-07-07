@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSContactsUsageDescription</key>
+	<string>Spoils imports contacts you choose to add people and occasion reminders.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Spoils imports calendar events you choose to add birthdays and anniversaries.</string>
 </dict>
 </plist>

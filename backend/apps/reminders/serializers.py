@@ -8,7 +8,20 @@ class OccasionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Occasion
-        fields = ("id", "type", "date", "reminder_days_before", "notes", "is_active", "snoozed_until")
+        fields = (
+            "id",
+            "type",
+            "date",
+            "reminder_days_before",
+            "notes",
+            "is_active",
+            "snoozed_until",
+            "share_with_family",
+            "surprise_mode_enabled",
+            "surprise_budget",
+            "gift_anonymously",
+            "surprise_address_id",
+        )
 
 
 class RecipientSerializer(serializers.ModelSerializer):
@@ -16,7 +29,7 @@ class RecipientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipient
-        fields = ("id", "name", "relationship", "notes", "popia_consent", "occasions")
+        fields = ("id", "name", "relationship", "notes", "popia_consent", "source", "external_id", "occasions")
         read_only_fields = ("id",)
 
     def create(self, validated_data):

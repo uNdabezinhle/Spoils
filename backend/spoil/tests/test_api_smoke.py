@@ -424,6 +424,180 @@ class GrowthFeaturesSmokeTests(APITestCase):
         self.assertTrue(detail.json().get("ar_enabled"))
 
 
+class EngagementFeaturesSmokeTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="engage@example.com",
+            email="engage@example.com",
+            password="securepass123",
+        )
+        self.partner = User.objects.create_user(
+            username="family@example.com",
+            email="family@example.com",
+            password="securepass123",
+        )
+        self.client.force_authenticate(user=self.user)
+
+    def test_import_contacts_and_calendar(self):
+        contacts = self.client.post(
+            "/api/v1/reminders/import/contacts/",
+            {
+                "contacts": [
+                    {"name": "Lerato", "external_id": "c1", "relationship": "Friend", "popia_consent": True},
+                    {"name": "Lerato", "external_id": "c1", "relationship": "Friend", "popia_consent": True},
+                ]
+            },
+            format="json",
+        )
+        self.assertEqual(contacts.status_code, status.HTTP_200_OK)
+        self.assertEqual(contacts.json()["created"], 1)
+        self.assertEqual(contacts.json()["skipped"], 1)
+
+        events = self.client.post(
+            "/api/v1/reminders/import/calendar/",
+            {
+                "events": [
+                    {
+                        "title": "Sam Birthday",
+                        "recipient_name": "Sam",
+                        "date": (date.today() + timedelta(days=40)).isoformat(),
+                        "type": "birthday",
+                        "external_id": "e1",
+                        "popia_consent": True,
+                    }
+                ]
+            },
+            format="json",
+        )
+        self.assertEqual(events.status_code, status.HTTP_200_OK)
+        self.assertEqual(events.json()["occasions_created"], 1)
+
+    @override_settings(PAYSTACK_SECRET_KEY="", PAYSTACK_PUBLIC_KEY="")
+    def test_surprise_settings_and_anonymous_checkout(self):
+        recipient = self.client.post(
+            "/api/v1/reminders/recipients/",
+            {
+                "name": "Nomsa",
+                "relationship": "Sister",
+                "popia_consent": True,
+                "occasions": [
+                    {
+                        "type": "birthday",
+                        "date": (date.today() + timedelta(days=30)).isoformat(),
+                        "reminder_days_before": 14,
+                    }
+                ],
+            },
+            format="json",
+        )
+        occasion_id = recipient.json()["occasions"][0]["id"]
+
+        settings = self.client.post(
+            f"/api/v1/reminders/occasions/{occasion_id}/surprise-settings/",
+            {
+                "surprise_mode_enabled": True,
+                "surprise_budget": "450.00",
+                "gift_anonymously": True,
+                "share_with_family": True,
+            },
+            format="json",
+        )
+        self.assertEqual(settings.status_code, status.HTTP_200_OK)
+        self.assertTrue(settings.json()["surprise_mode_enabled"])
+        self.assertTrue(settings.json()["gift_anonymously"])
+        self.assertTrue(settings.json()["share_with_family"])
+
+        category = Category.objects.create(name="Gifts", slug="gifts-engage")
+        product = Product.objects.create(
+            category=category,
+            name="Surprise Box",
+            slug="surprise-box",
+            description="A gift.",
+            base_price="299.00",
+            is_active=True,
+        )
+        address = self.client.post(
+            "/api/v1/auth/addresses/",
+            {
+                "label": "Home",
+                "recipient_name": "Nomsa",
+                "phone": "0821234567",
+                "street_address": "2 Oak St",
+                "suburb": "Rosebank",
+                "city": "Johannesburg",
+                "province": "Gauteng",
+                "postal_code": "2196",
+            },
+            format="json",
+        )
+        self.client.post(
+            f"/api/v1/orders/cart/items/",
+            {"product_id": product.id, "quantity": 1},
+            format="json",
+        )
+
+        initiate = self.client.post(
+            "/api/v1/orders/checkout/initiate/",
+            {
+                "address_id": address.json()["id"],
+                "delivery_date": (date.today() + timedelta(days=5)).isoformat(),
+                "delivery_type": "standard",
+                "is_anonymous_gift": True,
+                "occasion_id": occasion_id,
+            },
+            format="json",
+        )
+        self.assertEqual(initiate.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(initiate.json().get("demo_mode"))
+
+        from apps.orders.models import Order
+
+        order = Order.objects.get(pk=initiate.json()["order_id"])
+        self.assertTrue(order.is_anonymous_gift)
+        self.assertEqual(order.occasion_id, occasion_id)
+
+    def test_family_group_and_shared_calendar(self):
+        create = self.client.post("/api/v1/reminders/family/", {"name": "Engage Family"}, format="json")
+        self.assertEqual(create.status_code, status.HTTP_201_CREATED)
+        invite_code = create.json()["group"]["invite_code"]
+
+        recipient = self.client.post(
+            "/api/v1/reminders/recipients/",
+            {
+                "name": "Thandi",
+                "relationship": "Cousin",
+                "popia_consent": True,
+                "occasions": [
+                    {
+                        "type": "anniversary",
+                        "date": date(date.today().year, date.today().month, min(28, date.today().day)).isoformat(),
+                        "reminder_days_before": 14,
+                    }
+                ],
+            },
+            format="json",
+        )
+        occasion_id = recipient.json()["occasions"][0]["id"]
+        self.client.post(
+            f"/api/v1/reminders/occasions/{occasion_id}/surprise-settings/",
+            {"share_with_family": True},
+            format="json",
+        )
+
+        today = date.today()
+        calendar = self.client.get(
+            "/api/v1/reminders/family/calendar/",
+            {"year": today.year, "month": today.month},
+        )
+        self.assertEqual(calendar.status_code, status.HTTP_200_OK)
+        self.assertIn("events", calendar.json())
+
+        self.client.force_authenticate(user=self.partner)
+        join = self.client.post("/api/v1/reminders/family/join/", {"invite_code": invite_code}, format="json")
+        self.assertEqual(join.status_code, status.HTTP_200_OK)
+        self.assertEqual(join.json()["group"]["name"], "Engage Family")
+
+
 class AnalyticsSmokeTests(APITestCase):
     def setUp(self):
         self.staff = User.objects.create_user(

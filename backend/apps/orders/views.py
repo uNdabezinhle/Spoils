@@ -159,6 +159,9 @@ def checkout_initiate(request):
     delivery_type = request.data.get("delivery_type", "standard")
     promo_code = request.data.get("promo_code")
     points_to_redeem = int(request.data.get("points_to_redeem", 0) or 0)
+    is_anonymous_gift = bool(request.data.get("is_anonymous_gift", False))
+    occasion_id = request.data.get("occasion_id")
+    occasion_id = int(occasion_id) if occasion_id else None
 
     if not address_id or not delivery_date_str:
         return Response({"detail": "address_id and delivery_date are required."}, status=400)
@@ -176,6 +179,8 @@ def checkout_initiate(request):
             delivery_type=delivery_type,
             promo_code=promo_code,
             points_to_redeem=points_to_redeem,
+            is_anonymous_gift=is_anonymous_gift,
+            occasion_id=occasion_id,
         )
         payment = initiate_payment(order)
     except ValueError as exc:

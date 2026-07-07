@@ -111,3 +111,25 @@ def expire_stale_auto_gift_proposals():
         expires_at__lt=timezone.now(),
     ).update(status="expired")
     return {"expired": expired}
+
+
+@shared_task
+def process_surprise_mode_gifts():
+    from .models import Occasion
+    from .services.surprise_mode import process_surprise_for_occasion
+
+    processed = 0
+    occasions = Occasion.objects.filter(
+        is_active=True,
+        surprise_mode_enabled=True,
+    ).select_related("recipient", "recipient__user")
+    for occasion in occasions:
+        result = process_surprise_for_occasion(occasion=occasion)
+        if result:
+            processed += 1
+            logger.info(
+                "Surprise gift order %s for %s",
+                result.get("order_id"),
+                occasion.recipient.name,
+            )
+    return {"processed": processed}

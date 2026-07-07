@@ -116,7 +116,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/checkout',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const CheckoutScreen(),
+        builder: (context, state) {
+          final occasionRaw = state.uri.queryParameters['occasion_id'];
+          final occasionId = occasionRaw != null ? int.tryParse(occasionRaw) : null;
+          final anonymous = state.uri.queryParameters['anonymous'] == '1';
+          return CheckoutScreen(occasionId: occasionId, initialAnonymousGift: anonymous);
+        },
       ),
       GoRoute(
         path: '/content/faq',

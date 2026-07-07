@@ -38,6 +38,11 @@ def _serialize_occasion(o: Occasion, *, today):
         "original_date": o.date.isoformat(),
         "reminder_days_before": o.reminder_days_before,
         "days_until": (next_date - today).days,
+        "share_with_family": o.share_with_family,
+        "surprise_mode_enabled": o.surprise_mode_enabled,
+        "surprise_budget": str(o.surprise_budget) if o.surprise_budget is not None else None,
+        "gift_anonymously": o.gift_anonymously,
+        "surprise_address_id": o.surprise_address_id,
     }
 
 
@@ -301,3 +306,124 @@ def occasion_calendar(request):
             "events": by_date,
         }
     )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def import_contacts(request):
+    contacts = request.data.get("contacts", [])
+    if not isinstance(contacts, list):
+        return Response({"detail": "contacts must be a list."}, status=400)
+    from .services.import_sync import import_contacts as do_import
+
+    result = do_import(user=request.user, contacts=contacts)
+    return Response(result)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def import_calendar(request):
+    events = request.data.get("events", [])
+    if not isinstance(events, list):
+        return Response({"detail": "events must be a list."}, status=400)
+    from .services.import_sync import import_calendar_events
+
+    result = import_calendar_events(user=request.user, events=events)
+    return Response(result)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def family_group(request):
+    from .models import FamilyGroup, FamilyMembership
+    from .services.family import get_user_family_group, serialize_family_group
+
+    if request.method == "GET":
+        group = get_user_family_group(request.user)
+        if not group:
+            return Response({"group": None})
+        return Response({"group": serialize_family_group(group, user=request.user)})
+
+    name = request.data.get("name", "").strip() or "My Family"
+    if get_user_family_group(request.user):
+        return Response({"detail": "You already belong to a family group."}, status=400)
+    group = FamilyGroup.objects.create(name=name, owner=request.user)
+    FamilyMembership.objects.create(group=group, user=request.user, role="owner")
+    return Response({"group": serialize_family_group(group, user=request.user)}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def family_join(request):
+    from .models import FamilyMembership
+    from .services.family import get_user_family_group, serialize_family_group
+
+    code = request.data.get("invite_code", "").strip().upper()
+    if not code:
+        return Response({"detail": "invite_code is required."}, status=400)
+    if get_user_family_group(request.user):
+        return Response({"detail": "Leave your current family group first."}, status=400)
+
+    from .models import FamilyGroup
+
+    try:
+        group = FamilyGroup.objects.get(invite_code=code)
+    except FamilyGroup.DoesNotExist:
+        return Response({"detail": "Invalid invite code."}, status=404)
+
+    FamilyMembership.objects.create(group=group, user=request.user, role="member")
+    return Response({"group": serialize_family_group(group, user=request.user)})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def family_calendar(request):
+    from .services.family import family_calendar as build_calendar, get_user_family_group
+
+    group = get_user_family_group(request.user)
+    if not group:
+        return Response({"detail": "Join or create a family group first."}, status=404)
+
+    today = timezone.localdate()
+    try:
+        year = int(request.query_params.get("year", today.year))
+        month = int(request.query_params.get("month", today.month))
+    except (TypeError, ValueError):
+        return Response({"detail": "year and month must be integers."}, status=400)
+
+    return Response(build_calendar(group=group, year=year, month=month))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def occasion_surprise_settings(request, pk):
+    occasion = _user_occasion(request.user, pk)
+    if not occasion:
+        return Response({"detail": "Occasion not found."}, status=404)
+
+    if "surprise_mode_enabled" in request.data:
+        occasion.surprise_mode_enabled = bool(request.data["surprise_mode_enabled"])
+    if "surprise_budget" in request.data:
+        from decimal import Decimal
+
+        raw = request.data["surprise_budget"]
+        occasion.surprise_budget = Decimal(str(raw)) if raw not in (None, "") else None
+    if "gift_anonymously" in request.data:
+        occasion.gift_anonymously = bool(request.data["gift_anonymously"])
+    if "share_with_family" in request.data:
+        occasion.share_with_family = bool(request.data["share_with_family"])
+    if "surprise_address_id" in request.data:
+        raw = request.data["surprise_address_id"]
+        occasion.surprise_address_id = int(raw) if raw else None
+
+    occasion.save(
+        update_fields=[
+            "surprise_mode_enabled",
+            "surprise_budget",
+            "gift_anonymously",
+            "share_with_family",
+            "surprise_address_id",
+        ]
+    )
+    today = timezone.localdate()
+    return Response(_serialize_occasion(occasion, today=today))

@@ -11,6 +11,7 @@ import '../../auth/models/address_model.dart';
 import '../../auth/providers/address_provider.dart';
 import '../data/reminders_repository.dart';
 import '../models/auto_gift_proposal_model.dart';
+import '../models/recipient_model.dart';
 import '../my_people_screen.dart';
 import '../providers/reminders_provider.dart';
 
@@ -87,6 +88,8 @@ class OccasionDetailScreen extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: 16),
+              _EngagementSettingsCard(occasionId: occasionId, detail: detail),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -139,6 +142,14 @@ class OccasionDetailScreen extends ConsumerWidget {
               OutlinedButton(
                 onPressed: () => context.go(shopPathForOccasion(detail.type)),
                 child: const Text('See all matching gifts'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () => context.push(
+                  '/checkout?occasion_id=$occasionId${detail.giftAnonymously ? '&anonymous=1' : ''}',
+                ),
+                icon: const Icon(Icons.card_giftcard_outlined),
+                label: Text(detail.giftAnonymously ? 'Checkout as anonymous gift' : 'Checkout for this occasion'),
               ),
             ],
           );
@@ -239,6 +250,175 @@ class OccasionDetailScreen extends ConsumerWidget {
               ),
             )
             .toList(),
+      ),
+    );
+  }
+}
+
+class _EngagementSettingsCard extends ConsumerStatefulWidget {
+  const _EngagementSettingsCard({required this.occasionId, required this.detail});
+
+  final int occasionId;
+  final OccasionDetailModel detail;
+
+  @override
+  ConsumerState<_EngagementSettingsCard> createState() => _EngagementSettingsCardState();
+}
+
+class _EngagementSettingsCardState extends ConsumerState<_EngagementSettingsCard> {
+  late bool _shareWithFamily;
+  late bool _surpriseMode;
+  late bool _giftAnonymously;
+  final _budgetController = TextEditingController();
+  int? _surpriseAddressId;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _shareWithFamily = widget.detail.shareWithFamily;
+    _surpriseMode = widget.detail.surpriseModeEnabled;
+    _giftAnonymously = widget.detail.giftAnonymously;
+    _surpriseAddressId = widget.detail.surpriseAddressId;
+    if (widget.detail.surpriseBudget != null) {
+      _budgetController.text = widget.detail.surpriseBudget!;
+    }
+  }
+
+  @override
+  void dispose() {
+    _budgetController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      await ref.read(remindersRepositoryProvider).updateSurpriseSettings(
+            widget.occasionId,
+            shareWithFamily: _shareWithFamily,
+            surpriseModeEnabled: _surpriseMode,
+            giftAnonymously: _giftAnonymously,
+            surpriseBudget: _surpriseMode && _budgetController.text.trim().isNotEmpty
+                ? _budgetController.text.trim()
+                : null,
+            surpriseAddressId: _surpriseMode ? _surpriseAddressId : null,
+          );
+      ref.invalidate(occasionDetailProvider(widget.occasionId));
+      ref.invalidate(familyCalendarProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Settings saved.')));
+      }
+    } on DioException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ref.read(remindersRepositoryProvider).parseError(e))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _pickSurpriseAddress() async {
+    final addresses = await ref.read(addressesProvider.future);
+    if (!mounted) return;
+    if (addresses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Add a delivery address in Profile first.')),
+      );
+      return;
+    }
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Surprise delivery address'),
+        children: addresses
+            .map(
+              (a) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(ctx, a.id),
+                child: Text('${a.label} — ${a.streetAddress}, ${a.city}'),
+              ),
+            )
+            .toList(),
+      ),
+    );
+    if (picked != null) setState(() => _surpriseAddressId = picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Gifting preferences', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(
+              'Share with family, send anonymously, or let Spoils pick a surprise gift within your budget.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Share with family calendar'),
+              subtitle: const Text('Family members see this occasion (not surprise gifts).'),
+              value: _shareWithFamily,
+              onChanged: (v) => setState(() => _shareWithFamily = v),
+              activeColor: SpoilColors.teal,
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Gift anonymously'),
+              subtitle: const Text('Recipient won\'t see who sent the gift.'),
+              value: _giftAnonymously,
+              onChanged: (v) => setState(() => _giftAnonymously = v),
+              activeColor: SpoilColors.teal,
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Surprise mode'),
+              subtitle: const Text('We pick and send a gift 3 days before, within your budget.'),
+              value: _surpriseMode,
+              onChanged: (v) => setState(() => _surpriseMode = v),
+              activeColor: SpoilColors.teal,
+            ),
+            if (_surpriseMode) ...[
+              const SizedBox(height: 8),
+              TextField(
+                controller: _budgetController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Surprise budget (ZAR)',
+                  hintText: 'e.g. 500',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Delivery address for surprises'),
+                subtitle: Text(
+                  _surpriseAddressId != null ? 'Address #$_surpriseAddressId selected' : 'Choose an address',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _pickSurpriseAddress,
+              ),
+            ],
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _saving ? null : _save,
+                child: _saving
+                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Save preferences'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -16,7 +16,10 @@ import '../providers/order_provider.dart';
 import 'paystack_webview_screen.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
-  const CheckoutScreen({super.key});
+  const CheckoutScreen({this.occasionId, this.initialAnonymousGift = false, super.key});
+
+  final int? occasionId;
+  final bool initialAnonymousGift;
 
   @override
   ConsumerState<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -33,10 +36,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   String? _error;
   bool _usePoints = false;
   int _pointsToRedeem = 0;
+  late bool _anonymousGift;
 
   @override
   void initState() {
     super.initState();
+    _anonymousGift = widget.initialAnonymousGift;
     _deliveryDate = DateTime.now().add(const Duration(days: 2));
     WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPreview());
   }
@@ -114,6 +119,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         deliveryType: _deliveryType,
         promoCode: promo.isEmpty ? null : promo,
         pointsToRedeem: _usePoints ? _pointsToRedeem : 0,
+        isAnonymousGift: _anonymousGift,
+        occasionId: widget.occasionId,
       );
 
       if (!mounted) return;
@@ -312,6 +319,25 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       Text(_error!, style: const TextStyle(color: Colors.redAccent)),
                     ],
                     const SizedBox(height: 24),
+                    Text('Gift options', style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Send anonymously'),
+                      subtitle: const Text('Your name won\'t appear on the gift or receipt sent to them.'),
+                      value: _anonymousGift,
+                      onChanged: (v) => setState(() => _anonymousGift = v),
+                      activeColor: SpoilColors.teal,
+                    ),
+                    if (widget.occasionId != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          'Linked to occasion reminder #${widget.occasionId}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: SpoilColors.charcoalMuted),
+                        ),
+                      ),
+                    const SizedBox(height: 16),
                     Consumer(
                       builder: (context, ref, _) {
                         final loyalty = ref.watch(loyaltyAccountProvider);

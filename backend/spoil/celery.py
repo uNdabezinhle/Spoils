@@ -26,4 +26,8 @@ app.conf.beat_schedule = {
         "task": "apps.subscriptions.tasks.process_subscription_renewals",
         "schedule": crontab(hour=6, minute=0),
     },
+    "process-surprise-mode-gifts-daily": {
+        "task": "apps.reminders.tasks.process_surprise_mode_gifts",
+        "schedule": crontab(hour=7, minute=30),
+    },
 }
