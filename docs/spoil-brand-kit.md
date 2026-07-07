@@ -1,4 +1,4 @@
-# Spoil – Brand Kit
+# Spoils – Brand Kit
 
 **Brand Name:** Spoil  
 **Domain:** spoil.co.za  

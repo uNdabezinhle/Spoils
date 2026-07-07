@@ -1,4 +1,4 @@
-# Spoil – Occasion Reminder Feature Specification
+# Spoils – Occasion Reminder Feature Specification
 
 **Feature Name:** Occasion Reminder + Smart Gifting  
 **Version:** 1.0  

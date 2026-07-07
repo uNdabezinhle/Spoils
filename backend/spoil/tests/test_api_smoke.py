@@ -13,6 +13,7 @@ import json
 from django.test import override_settings
 
 from apps.products.models import Category, Product
+from apps.reminders.models import Occasion
 from apps.subscriptions.models import SubscriptionPlan
 
 User = get_user_model()
@@ -234,6 +235,7 @@ class PostMvpSmokeTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("events", response.json())
 
+    @override_settings(PAYSTACK_SECRET_KEY="", PAYSTACK_PUBLIC_KEY="")
     def test_subscriptions_flow(self):
         plans = self.client.get("/api/v1/subscriptions/plans/")
         self.assertEqual(plans.status_code, status.HTTP_200_OK)
@@ -245,11 +247,84 @@ class PostMvpSmokeTests(APITestCase):
             format="json",
         )
         self.assertEqual(subscribe.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(subscribe.json().get("demo_mode"))
+        sub_id = subscribe.json()["subscription"]["id"]
+        reference = subscribe.json()["reference"]
 
-        sub_id = subscribe.json()["id"]
+        verify = self.client.post(
+            "/api/v1/subscriptions/subscribe/verify/",
+            {"subscription_id": sub_id, "reference": reference},
+            format="json",
+        )
+        self.assertEqual(verify.status_code, status.HTTP_200_OK)
+        self.assertEqual(verify.json()["subscription"]["status"], "active")
+
         cancel = self.client.post(f"/api/v1/subscriptions/{sub_id}/cancel/")
         self.assertEqual(cancel.status_code, status.HTTP_200_OK)
         self.assertEqual(cancel.json()["status"], "cancelled")
+
+    @override_settings(PAYSTACK_SECRET_KEY="", PAYSTACK_PUBLIC_KEY="")
+    def test_auto_gift_approval_flow(self):
+        from apps.reminders.models import Recipient
+        from apps.reminders.services.auto_gift import create_proposal_for_occasion
+        from apps.subscriptions.models import UserSubscription
+
+        recipient = Recipient.objects.get(pk=Occasion.objects.get(pk=self.occasion_id).recipient_id)
+        soon_occasion = Occasion.objects.create(
+            recipient=recipient,
+            type="birthday",
+            date=date.today() + timedelta(days=5),
+            reminder_days_before=14,
+        )
+
+        auto_plan = SubscriptionPlan.objects.create(
+            name="Auto Gift",
+            slug="auto-gift",
+            model_type="occasion_auto",
+            description="Auto gifting.",
+            price_monthly="199.00",
+            is_active=True,
+        )
+        sub = UserSubscription.objects.create(
+            user=self.user,
+            plan=auto_plan,
+            status="active",
+            recipient_name="Zanele",
+            occasion=soon_occasion,
+            paystack_authorization_code="demo_auth_test",
+        )
+        proposal = create_proposal_for_occasion(occasion=soon_occasion, subscription=sub)
+        self.assertIsNotNone(proposal)
+
+        detail = self.client.get(f"/api/v1/reminders/occasions/{soon_occasion.id}/")
+        self.assertIsNotNone(detail.json().get("pending_auto_gift"))
+
+        address = self.client.post(
+            "/api/v1/auth/addresses/",
+            {
+                "label": "Home",
+                "recipient_name": "Zanele",
+                "phone": "0821234567",
+                "street_address": "1 Main Rd",
+                "suburb": "Sandton",
+                "city": "Johannesburg",
+                "province": "Gauteng",
+                "postal_code": "2196",
+            },
+            format="json",
+        )
+        self.assertEqual(address.status_code, status.HTTP_201_CREATED)
+
+        approve = self.client.post(
+            f"/api/v1/reminders/occasions/{soon_occasion.id}/approve-gift/",
+            {"address_id": address.json()["id"]},
+            format="json",
+        )
+        self.assertEqual(approve.status_code, status.HTTP_200_OK)
+        self.assertIn("order_id", approve.json())
+
+        proposal.refresh_from_db()
+        self.assertEqual(proposal.status, "ordered")
 
 
 class AnalyticsSmokeTests(APITestCase):

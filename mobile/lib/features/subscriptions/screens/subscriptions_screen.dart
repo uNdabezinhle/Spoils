@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/spoil_colors.dart';
 import '../../../shared/utils/currency_formatter.dart';
 import '../../../shared/widgets/spoil_text_field.dart';
+import '../../orders/screens/paystack_webview_screen.dart';
 import '../data/subscriptions_repository.dart';
 import '../models/subscription_models.dart';
 import '../providers/subscriptions_provider.dart';
@@ -121,7 +122,49 @@ class SubscriptionsScreen extends ConsumerWidget {
 
     final repo = ref.read(subscriptionsRepositoryProvider);
     try {
-      await repo.subscribe(planId: plan.id, recipientName: recipientName);
+      final payment = await repo.initiateSubscribe(
+        planId: plan.id,
+        recipientName: recipientName,
+      );
+      if (!context.mounted) return;
+
+      if (payment.demoMode) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Demo payment'),
+            content: Text(
+              'Paystack is in demo mode. Confirm subscription payment of ${formatZar(payment.amount)}?',
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+              ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Confirm')),
+            ],
+          ),
+        );
+        if (confirmed != true) return;
+        await repo.verifySubscribe(
+          subscriptionId: payment.subscriptionId,
+          reference: payment.reference,
+        );
+      } else if (payment.authorizationUrl != null) {
+        final success = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PaystackWebViewScreen(
+              authorizationUrl: payment.authorizationUrl!,
+              onPaymentComplete: (reference) => repo.verifySubscribe(
+                subscriptionId: payment.subscriptionId,
+                reference: reference,
+              ),
+            ),
+          ),
+        );
+        if (success != true) return;
+      } else {
+        throw Exception('Payment could not be started.');
+      }
+
       if (context.mounted) {
         ref.invalidate(mySubscriptionsProvider);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -270,6 +313,7 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = switch (status) {
       'active' => 'Active',
+      'pending_payment' => 'Pending payment',
       'paused' => 'Paused',
       'cancelled' => 'Cancelled',
       _ => status,
@@ -277,6 +321,7 @@ class _StatusChip extends StatelessWidget {
     final color = switch (status) {
       'active' => SpoilColors.teal,
       'cancelled' => SpoilColors.charcoalMuted,
+      'pending_payment' => SpoilColors.gold,
       _ => SpoilColors.gold,
     };
 

@@ -53,6 +53,51 @@ void main() {
     expect(find.text('Spring Bloom'), findsOneWidget);
   });
 
+  testWidgets('OccasionDetailScreen shows auto-gift approval card', (tester) async {
+    const occasionId = 2;
+    const detail = OccasionDetailModel(
+      id: occasionId,
+      recipientId: 10,
+      recipientName: 'Zanele',
+      relationship: 'Friend',
+      type: 'birthday',
+      typeLabel: 'Birthday',
+      date: '2026-08-01',
+      daysUntil: 5,
+      pendingAutoGift: {
+        'id': 1,
+        'occasion_id': occasionId,
+        'status': 'pending_approval',
+        'delivery_date': '2026-08-01',
+        'expires_at': '2026-07-30T23:59:59Z',
+        'recipient_name': 'Zanele',
+        'occasion_type': 'birthday',
+        'occasion_type_label': 'Birthday',
+        'product': {
+          'id': 9,
+          'name': 'Birthday Roses',
+          'slug': 'birthday-roses',
+          'base_price': '399.00',
+          'image_url': '',
+        },
+      },
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          occasionDetailProvider(occasionId).overrideWith((ref) async => detail),
+          occasionSuggestionsProvider(occasionId).overrideWith((ref) async => []),
+        ],
+        child: const MaterialApp(home: OccasionDetailScreen(occasionId: occasionId)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Auto-gift ready for approval'), findsOneWidget);
+    expect(find.text('Approve & send'), findsOneWidget);
+  });
+
   testWidgets('SubscriptionsScreen lists available plans', (tester) async {
     const plans = [
       SubscriptionPlanModel(

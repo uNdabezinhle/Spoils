@@ -1,4 +1,4 @@
-# Spoil – Full Application Description
+# Spoils – Full Application Description
 
 **App Name:** Spoil  
 **Tagline:** Spoil them properly.  

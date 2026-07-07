@@ -227,7 +227,16 @@ def paystack_webhook(request):
                 order = Order.objects.get(paystack_reference=reference)
                 mark_order_paid(order, reference)
             except Order.DoesNotExist:
-                pass
+                from apps.subscriptions.models import UserSubscription
+                from apps.subscriptions.services.billing import verify_subscription_payment
+
+                try:
+                    sub = UserSubscription.objects.select_related("plan").get(paystack_reference=reference)
+                    verify_subscription_payment(sub=sub, reference=reference)
+                except UserSubscription.DoesNotExist:
+                    pass
+                except Exception:
+                    pass
     return Response({"status": "ok"})
 
 

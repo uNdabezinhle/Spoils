@@ -62,3 +62,46 @@ class ReminderLog(models.Model):
 
     class Meta:
         ordering = ["-sent_at"]
+
+
+class AutoGiftProposal(models.Model):
+    STATUS_CHOICES = [
+        ("pending_approval", "Pending Approval"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+        ("expired", "Expired"),
+        ("ordered", "Ordered"),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="auto_gift_proposals")
+    occasion = models.ForeignKey(Occasion, on_delete=models.CASCADE, related_name="auto_gift_proposals")
+    subscription = models.ForeignKey(
+        "subscriptions.UserSubscription",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="auto_gift_proposals",
+    )
+    suggested_product = models.ForeignKey(
+        "products.Product",
+        on_delete=models.PROTECT,
+        related_name="auto_gift_proposals",
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending_approval")
+    delivery_date = models.DateField()
+    order = models.ForeignKey(
+        "orders.Order",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="auto_gift_proposals",
+    )
+    expires_at = models.DateTimeField()
+    approved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Auto-gift for {self.occasion} ({self.status})"

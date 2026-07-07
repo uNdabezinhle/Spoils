@@ -24,6 +24,17 @@ class DeviceTokenService {
     if (_firebaseProjectId.isEmpty) return;
     try {
       await _ensureFirebase();
+      await FirebaseMessaging.instance.requestPermission();
+      FirebaseMessaging.instance.onTokenRefresh.listen((token) async {
+        if (token.isEmpty) return;
+        final platform = kIsWeb
+            ? 'web'
+            : Platform.isIOS
+                ? 'ios'
+                : 'android';
+        await _repository.registerDeviceToken(token: token, platform: platform);
+        _lastToken = token;
+      });
       final token = await FirebaseMessaging.instance.getToken();
       if (token == null || token.isEmpty || token == _lastToken) return;
 

@@ -1,11 +1,16 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/spoil_colors.dart';
+import '../../../shared/utils/currency_formatter.dart';
 import '../../../shared/widgets/product_card.dart';
+import '../../auth/models/address_model.dart';
+import '../../auth/providers/address_provider.dart';
 import '../data/reminders_repository.dart';
+import '../models/auto_gift_proposal_model.dart';
 import '../my_people_screen.dart';
 import '../providers/reminders_provider.dart';
 
@@ -73,6 +78,14 @@ class OccasionDetailScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+              if (detail.hasPendingAutoGift) ...[
+                const SizedBox(height: 16),
+                _AutoGiftApprovalCard(
+                  proposal: AutoGiftProposalModel.fromJson(detail.pendingAutoGift!),
+                  onApprove: () => _approveAutoGift(context, ref, detail.pendingAutoGift!),
+                  onReject: () => _rejectAutoGift(context, ref),
+                ),
+              ],
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -154,5 +167,129 @@ class OccasionDetailScreen extends ConsumerWidget {
       ref.invalidate(occasionCalendarProvider);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Skipped for this year.')));
     }
+  }
+
+  Future<void> _approveAutoGift(BuildContext context, WidgetRef ref, Map<String, dynamic> proposalJson) async {
+    final addresses = await ref.read(addressesProvider.future);
+    if (!context.mounted) return;
+    if (addresses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Add a delivery address in Profile before approving.')),
+      );
+      return;
+    }
+
+    final addressId = await _pickAddress(context, addresses);
+    if (addressId == null || !context.mounted) return;
+
+    try {
+      final orderId = await ref.read(remindersRepositoryProvider).approveAutoGift(
+            occasionId: occasionId,
+            addressId: addressId,
+            productId: proposalJson['product']?['id'] as int?,
+          );
+      if (context.mounted) {
+        ref.invalidate(occasionDetailProvider(occasionId));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(orderId != null ? 'Gift approved! Order #$orderId confirmed.' : 'Gift approved!')),
+        );
+      }
+    } on DioException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ref.read(remindersRepositoryProvider).parseError(e))),
+        );
+      }
+    }
+  }
+
+  Future<void> _rejectAutoGift(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Skip this gift?'),
+        content: const Text('We will not send the suggested gift for this occasion.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Skip gift')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    await ref.read(remindersRepositoryProvider).rejectAutoGift(occasionId);
+    if (context.mounted) {
+      ref.invalidate(occasionDetailProvider(occasionId));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gift proposal skipped.')));
+    }
+  }
+
+  Future<int?> _pickAddress(BuildContext context, List<AddressModel> addresses) {
+    if (addresses.length == 1) return Future.value(addresses.first.id);
+
+    return showDialog<int>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Delivery address'),
+        children: addresses
+            .map(
+              (a) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(ctx, a.id),
+                child: Text('${a.label} — ${a.streetAddress}, ${a.city}'),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+}
+
+class _AutoGiftApprovalCard extends StatelessWidget {
+  const _AutoGiftApprovalCard({
+    required this.proposal,
+    required this.onApprove,
+    required this.onReject,
+  });
+
+  final AutoGiftProposalModel proposal;
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: SpoilColors.blush.withOpacity(0.35),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Auto-gift ready for approval', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              'We picked ${proposal.product.name} for ${proposal.recipientName}\'s ${proposal.occasionTypeLabel.toLowerCase()}.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${formatZar(proposal.product.basePrice)} · Deliver ${proposal.deliveryDate}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: SpoilColors.teal),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(onPressed: onReject, child: const Text('Skip')),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(onPressed: onApprove, child: const Text('Approve & send')),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

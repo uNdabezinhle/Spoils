@@ -63,6 +63,8 @@ class UserSubscriptionModel {
 
   bool get isActive => status == 'active';
 
+  bool get isPendingPayment => status == 'pending_payment';
+
   factory UserSubscriptionModel.fromJson(Map<String, dynamic> json) {
     return UserSubscriptionModel(
       id: json['id'] as int,
@@ -72,6 +74,36 @@ class UserSubscriptionModel {
       startedAt: json['started_at'] as String? ?? '',
       nextBillingDate: json['next_billing_date'] as String?,
       notes: json['notes'] as String? ?? '',
+    );
+  }
+}
+
+class SubscriptionPaymentInitResult {
+  const SubscriptionPaymentInitResult({
+    required this.subscriptionId,
+    required this.reference,
+    required this.amount,
+    required this.demoMode,
+    this.authorizationUrl,
+    this.subscription,
+  });
+
+  final int subscriptionId;
+  final String reference;
+  final String amount;
+  final bool demoMode;
+  final String? authorizationUrl;
+  final UserSubscriptionModel? subscription;
+
+  factory SubscriptionPaymentInitResult.fromJson(Map<String, dynamic> json) {
+    final sub = json['subscription'] as Map<String, dynamic>?;
+    return SubscriptionPaymentInitResult(
+      subscriptionId: sub?['id'] as int? ?? json['subscription_id'] as int,
+      reference: json['reference'] as String,
+      amount: json['amount']?.toString() ?? '0',
+      demoMode: json['demo_mode'] as bool? ?? false,
+      authorizationUrl: json['authorization_url'] as String?,
+      subscription: sub != null ? UserSubscriptionModel.fromJson(sub) : null,
     );
   }
 }

@@ -12,4 +12,7 @@ urlpatterns = [
     path("occasions/<int:pk>/suggestions/", views.occasion_suggestions, name="occasion-suggestions"),
     path("occasions/<int:pk>/snooze/", views.occasion_snooze, name="occasion-snooze"),
     path("occasions/<int:pk>/skip/", views.occasion_skip, name="occasion-skip"),
+    path("occasions/<int:pk>/pending-gift/", views.occasion_pending_gift, name="occasion-pending-gift"),
+    path("occasions/<int:pk>/approve-gift/", views.occasion_approve_gift, name="occasion-approve-gift"),
+    path("occasions/<int:pk>/reject-gift/", views.occasion_reject_gift, name="occasion-reject-gift"),
 ]

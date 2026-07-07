@@ -118,20 +118,65 @@ def initiate_payment(order: Order) -> dict:
 
 
 @transaction.atomic
+def create_order_for_product(
+    user,
+    *,
+    product,
+    address_id: int,
+    delivery_date: date,
+    delivery_type: str = "standard",
+    quantity: int = 1,
+) -> Order:
+    try:
+        address = user.addresses.get(pk=address_id)
+    except Address.DoesNotExist:
+        raise ValueError("Delivery address not found.")
+
+    unit_total = line_unit_total(product, {})
+    total = unit_total * quantity + DELIVERY_FEES.get(delivery_type, DELIVERY_FEES["standard"])
+
+    order = Order.objects.create(
+        user=user,
+        status="pending",
+        total_amount=max(total, Decimal("0.01")),
+        delivery_address=_address_to_dict(address),
+        delivery_date=delivery_date,
+        delivery_type=delivery_type,
+    )
+    from ..models import OrderItem
+
+    OrderItem.objects.create(
+        order=order,
+        product=product,
+        quantity=quantity,
+        unit_price=unit_total,
+        customisation_details={},
+    )
+
+    reference = generate_reference(order.id)
+    order.paystack_reference = reference
+    order.save(update_fields=["paystack_reference"])
+    return order
+
+
+@transaction.atomic
 def mark_order_paid(order: Order, reference: str) -> Order:
     if order.status == "paid":
         return order
 
+    previous_status = order.status
     order.status = "paid"
     order.paystack_reference = reference
     order.save(update_fields=["status", "paystack_reference", "updated_at"])
 
-    Cart.objects.filter(user=order.user).first()
     cart = Cart.objects.filter(user=order.user).first()
     if cart:
         cart.items.all().delete()
 
     _send_confirmation_email(order)
+    from .notifications import notify_order_status_change
+
+    notify_order_status_change(order=order, previous_status=previous_status)
     return order
 
 

@@ -10,6 +10,7 @@ from rest_framework.response import Response
 
 from .models import Occasion, Recipient, ReminderLog
 from .serializers import RecipientSerializer
+from .services.auto_gift import approve_proposal, reject_proposal, serialize_pending_proposal
 from .services.suggestions import suggest_gifts_for_occasion
 from .utils import next_occurrence_on
 
@@ -149,6 +150,7 @@ def occasion_detail(request, pk):
                 status="skipped",
                 skip_year=next_date.year,
             ).exists(),
+            "pending_auto_gift": serialize_pending_proposal(user=request.user, occasion=occasion),
         }
     )
 
@@ -193,6 +195,69 @@ def occasion_skip(request, pk):
     skip_year = next_occurrence_on(occasion.date, today=today).year
     ReminderLog.objects.create(occasion=occasion, status="skipped", skip_year=skip_year)
     return Response({"detail": f"Skipped reminders for {skip_year}.", "skip_year": skip_year})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def occasion_pending_gift(request, pk):
+    occasion = _user_occasion(request.user, pk)
+    if not occasion:
+        return Response({"detail": "Occasion not found."}, status=404)
+    proposal = serialize_pending_proposal(user=request.user, occasion=occasion)
+    if not proposal:
+        return Response({"proposal": None})
+    return Response({"proposal": proposal})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def occasion_approve_gift(request, pk):
+    occasion = _user_occasion(request.user, pk)
+    if not occasion:
+        return Response({"detail": "Occasion not found."}, status=404)
+
+    from .services.auto_gift import get_pending_proposal
+
+    proposal = get_pending_proposal(user=request.user, occasion=occasion)
+    if not proposal:
+        return Response({"detail": "No pending gift to approve."}, status=404)
+
+    address_id = request.data.get("address_id")
+    if not address_id:
+        return Response({"detail": "address_id is required."}, status=400)
+
+    product_id = request.data.get("product_id")
+    try:
+        result = approve_proposal(
+            proposal=proposal,
+            address_id=int(address_id),
+            product_id=int(product_id) if product_id else None,
+        )
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=400)
+
+    return Response(result)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def occasion_reject_gift(request, pk):
+    occasion = _user_occasion(request.user, pk)
+    if not occasion:
+        return Response({"detail": "Occasion not found."}, status=404)
+
+    from .services.auto_gift import get_pending_proposal
+
+    proposal = get_pending_proposal(user=request.user, occasion=occasion)
+    if not proposal:
+        return Response({"detail": "No pending gift to reject."}, status=404)
+
+    try:
+        reject_proposal(proposal=proposal)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=400)
+
+    return Response({"detail": "Gift proposal rejected."})
 
 
 @api_view(["GET"])

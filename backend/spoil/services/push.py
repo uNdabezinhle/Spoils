@@ -25,17 +25,31 @@ def _get_firebase_app():
         return None
 
 
-def send_fcm_to_tokens(*, tokens: list[str], title: str, body: str) -> int:
+def send_fcm_to_tokens(
+    *,
+    tokens: list[str],
+    title: str,
+    body: str,
+    data: dict[str, str] | None = None,
+) -> int:
     if not tokens:
         return 0
+    payload = {str(k): str(v) for k, v in (data or {}).items()}
     if not _get_firebase_app():
-        logger.info("FCM stub — would push (%d device(s)): %s / %s", len(tokens), title, body)
+        logger.info(
+            "FCM stub — would push (%d device(s)): %s / %s data=%s",
+            len(tokens),
+            title,
+            body,
+            payload,
+        )
         return 0
     try:
         from firebase_admin import messaging
 
         message = messaging.MulticastMessage(
             notification=messaging.Notification(title=title, body=body),
+            data=payload,
             tokens=tokens,
         )
         response = messaging.send_each_for_multicast(message)

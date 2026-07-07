@@ -27,17 +27,31 @@ class SubscriptionsRepository {
         .toList();
   }
 
-  Future<UserSubscriptionModel> subscribe({
+  Future<SubscriptionPaymentInitResult> initiateSubscribe({
     required int planId,
     String recipientName = '',
     String notes = '',
+    int? occasionId,
   }) async {
     final response = await _dio.post('/subscriptions/subscribe/', data: {
       'plan_id': planId,
       if (recipientName.isNotEmpty) 'recipient_name': recipientName,
       if (notes.isNotEmpty) 'notes': notes,
+      if (occasionId != null) 'occasion_id': occasionId,
     });
-    return UserSubscriptionModel.fromJson(response.data as Map<String, dynamic>);
+    return SubscriptionPaymentInitResult.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<UserSubscriptionModel> verifySubscribe({
+    required int subscriptionId,
+    required String reference,
+  }) async {
+    final response = await _dio.post('/subscriptions/subscribe/verify/', data: {
+      'subscription_id': subscriptionId,
+      'reference': reference,
+    });
+    final data = response.data as Map<String, dynamic>;
+    return UserSubscriptionModel.fromJson(data['subscription'] as Map<String, dynamic>);
   }
 
   Future<UserSubscriptionModel> cancelSubscription(int id) async {

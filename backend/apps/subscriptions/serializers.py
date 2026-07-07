@@ -31,8 +31,9 @@ class UserSubscriptionSerializer(serializers.ModelSerializer):
             "plan_id",
             "status",
             "recipient_name",
+            "occasion",
             "started_at",
             "next_billing_date",
             "notes",
         )
-        read_only_fields = ("id", "status", "started_at", "next_billing_date")
+        read_only_fields = ("id", "status", "occasion", "started_at", "next_billing_date")

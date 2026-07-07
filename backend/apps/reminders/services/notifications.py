@@ -25,11 +25,17 @@ def send_reminder_email(*, user, recipient_name: str, occasion_type: str, occasi
     )
 
 
-def send_push_notification(*, user, title: str, body: str) -> int:
+def send_push_notification(
+    *,
+    user,
+    title: str,
+    body: str,
+    data: dict[str, str] | None = None,
+) -> int:
     """Send FCM push when credentials are configured; otherwise log only."""
     from spoil.services.push import send_fcm_to_tokens
 
     tokens = list(user.device_tokens.values_list("token", flat=True))
     if not tokens:
         return 0
-    return send_fcm_to_tokens(tokens=tokens, title=title, body=body)
+    return send_fcm_to_tokens(tokens=tokens, title=title, body=body, data=data)

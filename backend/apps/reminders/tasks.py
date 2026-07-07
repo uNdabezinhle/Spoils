@@ -63,3 +63,51 @@ def send_due_reminders():
         sent_count += 1
 
     return {"sent": sent_count}
+
+
+@shared_task
+def create_auto_gift_proposals():
+    from apps.subscriptions.models import UserSubscription
+
+    from .models import Occasion
+    from .services.auto_gift import create_proposal_for_occasion
+
+    active_subs = UserSubscription.objects.filter(
+        status="active",
+        plan__model_type="occasion_auto",
+    ).select_related("user", "plan", "occasion")
+    created = 0
+
+    for sub in active_subs:
+        occasions = Occasion.objects.filter(
+            recipient__user=sub.user,
+            is_active=True,
+        ).select_related("recipient")
+        if sub.occasion_id:
+            occasions = occasions.filter(pk=sub.occasion_id)
+        elif sub.recipient_name:
+            occasions = occasions.filter(recipient__name__iexact=sub.recipient_name)
+
+        for occasion in occasions:
+            proposal = create_proposal_for_occasion(occasion=occasion, subscription=sub)
+            if proposal:
+                created += 1
+                logger.info(
+                    "Auto-gift proposal %s for %s (%s)",
+                    proposal.id,
+                    occasion.recipient.name,
+                    sub.user.email,
+                )
+
+    return {"created": created}
+
+
+@shared_task
+def expire_stale_auto_gift_proposals():
+    from .models import AutoGiftProposal
+
+    expired = AutoGiftProposal.objects.filter(
+        status="pending_approval",
+        expires_at__lt=timezone.now(),
+    ).update(status="expired")
+    return {"expired": expired}

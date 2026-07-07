@@ -43,4 +43,9 @@ def notify_order_status_change(*, order, previous_status: str | None) -> None:
         user=order.user,
         title=f"Order #{order.id} update",
         body=f"Your order is now: {label}",
+        data={
+            "type": "order_status",
+            "order_id": str(order.id),
+            "status": order.status,
+        },
     )

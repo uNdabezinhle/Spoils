@@ -14,6 +14,10 @@ def generate_reference(order_id: int) -> str:
     return f"spoil_{order_id}_{uuid.uuid4().hex[:12]}"
 
 
+def generate_subscription_reference(subscription_id: int) -> str:
+    return f"sub_{subscription_id}_{uuid.uuid4().hex[:12]}"
+
+
 def is_demo_mode() -> bool:
     return not settings.PAYSTACK_SECRET_KEY
 
@@ -54,7 +58,12 @@ def initialize_transaction(*, email: str, amount_cents: int, reference: str, met
 
 def verify_transaction(reference: str) -> dict:
     if is_demo_mode():
-        return {"status": "success", "reference": reference, "demo_mode": True}
+        return {
+            "status": "success",
+            "reference": reference,
+            "demo_mode": True,
+            "authorization_code": f"demo_auth_{reference[:24]}",
+        }
 
     response = requests.get(
         f"https://api.paystack.co/transaction/verify/{reference}",
@@ -66,11 +75,56 @@ def verify_transaction(reference: str) -> dict:
         raise PaystackError(body.get("message", "Could not verify payment."))
 
     data = body["data"]
+    authorization = data.get("authorization") or {}
     return {
         "status": data["status"],
         "reference": data["reference"],
         "amount": data["amount"],
         "demo_mode": False,
+        "authorization_code": authorization.get("authorization_code", ""),
+    }
+
+
+def charge_authorization(
+    *,
+    email: str,
+    amount_cents: int,
+    authorization_code: str,
+    reference: str,
+    metadata: dict | None = None,
+) -> dict:
+    if is_demo_mode():
+        return {
+            "status": "success",
+            "reference": reference,
+            "demo_mode": True,
+            "authorization_code": authorization_code,
+        }
+
+    response = requests.post(
+        "https://api.paystack.co/transaction/charge_authorization",
+        headers={"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"},
+        json={
+            "email": email,
+            "amount": amount_cents,
+            "authorization_code": authorization_code,
+            "reference": reference,
+            "currency": "ZAR",
+            "metadata": metadata or {},
+        },
+        timeout=30,
+    )
+    body = response.json()
+    if not response.ok or not body.get("status"):
+        raise PaystackError(body.get("message", "Could not charge authorization."))
+
+    data = body["data"]
+    authorization = data.get("authorization") or {}
+    return {
+        "status": data["status"],
+        "reference": data["reference"],
+        "demo_mode": False,
+        "authorization_code": authorization.get("authorization_code", authorization_code),
     }
 
 

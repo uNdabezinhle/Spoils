@@ -44,6 +44,25 @@ class RemindersRepository {
     return true;
   }
 
+  Future<int?> approveAutoGift({
+    required int occasionId,
+    required int addressId,
+    int? productId,
+  }) async {
+    final response = await _dio.post(
+      '/reminders/occasions/$occasionId/approve-gift/',
+      data: {
+        'address_id': addressId,
+        if (productId != null) 'product_id': productId,
+      },
+    );
+    return (response.data as Map<String, dynamic>)['order_id'] as int?;
+  }
+
+  Future<void> rejectAutoGift(int occasionId) async {
+    await _dio.post('/reminders/occasions/$occasionId/reject-gift/');
+  }
+
   Future<CalendarMonthModel> fetchCalendar({required int year, required int month}) async {
     final response = await _dio.get('/reminders/calendar/', queryParameters: {'year': year, 'month': month});
     return CalendarMonthModel.fromJson(response.data as Map<String, dynamic>);

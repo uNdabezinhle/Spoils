@@ -104,6 +104,7 @@ class OccasionDetailModel {
     this.occasionNotes = '',
     this.snoozedUntil,
     this.skippedThisYear = false,
+    this.pendingAutoGift,
   });
 
   final int id;
@@ -118,6 +119,9 @@ class OccasionDetailModel {
   final String occasionNotes;
   final String? snoozedUntil;
   final bool skippedThisYear;
+  final Map<String, dynamic>? pendingAutoGift;
+
+  bool get hasPendingAutoGift => pendingAutoGift != null;
 
   factory OccasionDetailModel.fromJson(Map<String, dynamic> json) {
     return OccasionDetailModel(
@@ -133,6 +137,7 @@ class OccasionDetailModel {
       occasionNotes: json['occasion_notes'] as String? ?? '',
       snoozedUntil: json['snoozed_until'] as String?,
       skippedThisYear: json['skipped_this_year'] as bool? ?? false,
+      pendingAutoGift: json['pending_auto_gift'] as Map<String, dynamic>?,
     );
   }
 }

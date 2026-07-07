@@ -1,4 +1,4 @@
-# Spoil – MVP Modules & Features (First Version)
+# Spoils – MVP Modules & Features (First Version)
 
 **Document Purpose:** Define the scope of the first public version (MVP) of the Spoil gift shop application.
 

@@ -14,4 +14,16 @@ app.conf.beat_schedule = {
         "task": "apps.reminders.tasks.send_due_reminders",
         "schedule": crontab(hour=8, minute=0),
     },
+    "create-auto-gift-proposals-daily": {
+        "task": "apps.reminders.tasks.create_auto_gift_proposals",
+        "schedule": crontab(hour=9, minute=0),
+    },
+    "expire-stale-auto-gift-proposals": {
+        "task": "apps.reminders.tasks.expire_stale_auto_gift_proposals",
+        "schedule": crontab(hour=10, minute=0),
+    },
+    "process-subscription-renewals-daily": {
+        "task": "apps.subscriptions.tasks.process_subscription_renewals",
+        "schedule": crontab(hour=6, minute=0),
+    },
 }

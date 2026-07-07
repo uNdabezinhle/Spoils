@@ -28,7 +28,9 @@ All eight MVP phases are implemented on `main`:
 | Occasion detail & gift suggestions | ✅ | ✅ |
 | Snooze / skip reminders | ✅ | ✅ |
 | People calendar | ✅ | ✅ |
-| Subscriptions (plans, subscribe, cancel) | ✅ | ✅ |
+| Subscriptions (Paystack billing + renewals) | ✅ | ✅ |
+| Occasion Auto-Gift approval flow | ✅ | ✅ |
+| Order status push notifications | ✅ | ✅ (needs Firebase) |
 | Staff analytics API + admin dashboard | ✅ | — (admin web) |
 | Social login (Google / Apple) | ✅ | ✅ (needs OAuth IDs) |
 | Profile photo upload | ✅ | ✅ |
@@ -81,7 +83,7 @@ flutter run --dart-define=API_BASE_URL=http://192.168.1.x:8000/api/v1
 
 ### 4. Tests
 
-**API smoke tests (18):**
+**API smoke tests (19):**
 
 ```bash
 cd backend
