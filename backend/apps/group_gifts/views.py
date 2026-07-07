@@ -48,6 +48,27 @@ def group_gift_list(request):
     return Response(GroupGiftSerializer(gift).data, status=status.HTTP_201_CREATED)
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def group_gift_cancel(request, pk):
+    try:
+        gift = GroupGift.objects.prefetch_related("contributions").get(pk=pk, organizer=request.user)
+    except GroupGift.DoesNotExist:
+        return Response({"detail": "Group gift not found."}, status=404)
+
+    from .services.refunds import cancel_group_gift
+
+    try:
+        cancel_group_gift(group_gift=gift)
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=400)
+    except PaystackError as exc:
+        return Response({"detail": str(exc)}, status=502)
+
+    gift.refresh_from_db()
+    return Response({"detail": "Group gift cancelled. Contributors refunded.", "group_gift": GroupGiftSerializer(gift).data})
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def group_gift_detail(request, pk):

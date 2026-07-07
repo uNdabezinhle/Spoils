@@ -56,6 +56,7 @@ class Order(models.Model):
     points_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_anonymous_gift = models.BooleanField(default=False)
     occasion_id = models.PositiveIntegerField(null=True, blank=True)
+    subscription_id = models.PositiveIntegerField(null=True, blank=True)
     promo_code = models.ForeignKey(PromoCode, null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

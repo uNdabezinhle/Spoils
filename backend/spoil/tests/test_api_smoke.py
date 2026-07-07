@@ -598,6 +598,150 @@ class EngagementFeaturesSmokeTests(APITestCase):
         self.assertEqual(join.json()["group"]["name"], "Engage Family")
 
 
+class Phase2PolishSmokeTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="polish@example.com",
+            email="polish@example.com",
+            password="securepass123",
+        )
+        self.client.force_authenticate(user=self.user)
+
+    def test_mark_sent_and_suggestion_reasons(self):
+        recipient = self.client.post(
+            "/api/v1/reminders/recipients/",
+            {
+                "name": "Kaya",
+                "relationship": "Friend",
+                "popia_consent": True,
+                "occasions": [
+                    {
+                        "type": "birthday",
+                        "date": (date.today() + timedelta(days=20)).isoformat(),
+                        "reminder_days_before": 14,
+                    }
+                ],
+            },
+            format="json",
+        )
+        occasion_id = recipient.json()["occasions"][0]["id"]
+
+        category = Category.objects.create(name="Birthday", slug="birthday-polish")
+        Product.objects.create(
+            category=category,
+            name="Birthday Treat",
+            slug="birthday-treat",
+            description="For birthdays.",
+            base_price="349.00",
+            occasion="birthday",
+            is_featured=True,
+        )
+
+        suggestions = self.client.get(f"/api/v1/reminders/occasions/{occasion_id}/suggestions/")
+        self.assertEqual(suggestions.status_code, status.HTTP_200_OK)
+        products = suggestions.json()["products"]
+        self.assertGreaterEqual(len(products), 1)
+        self.assertIn("pick_reason", products[0])
+
+        mark = self.client.post(f"/api/v1/reminders/occasions/{occasion_id}/mark-sent/")
+        self.assertEqual(mark.status_code, status.HTTP_200_OK)
+
+        detail = self.client.get(f"/api/v1/reminders/occasions/{occasion_id}/")
+        self.assertTrue(detail.json().get("marked_sent_this_year"))
+
+    def test_auto_send_setting_and_family_leave(self):
+        create = self.client.post("/api/v1/reminders/family/", {"name": "Polish Family"}, format="json")
+        self.assertEqual(create.status_code, status.HTTP_201_CREATED)
+
+        recipient = self.client.post(
+            "/api/v1/reminders/recipients/",
+            {
+                "name": "Neo",
+                "relationship": "Brother",
+                "popia_consent": True,
+                "occasions": [
+                    {
+                        "type": "birthday",
+                        "date": (date.today() + timedelta(days=25)).isoformat(),
+                        "reminder_days_before": 14,
+                    }
+                ],
+            },
+            format="json",
+        )
+        occasion_id = recipient.json()["occasions"][0]["id"]
+        settings = self.client.post(
+            f"/api/v1/reminders/occasions/{occasion_id}/surprise-settings/",
+            {"auto_send_enabled": True},
+            format="json",
+        )
+        self.assertTrue(settings.json()["auto_send_enabled"])
+
+        leave = self.client.post("/api/v1/reminders/family/leave/")
+        self.assertEqual(leave.status_code, status.HTTP_200_OK)
+        group = self.client.get("/api/v1/reminders/family/")
+        self.assertIsNone(group.json().get("group"))
+
+    @override_settings(PAYSTACK_SECRET_KEY="", PAYSTACK_PUBLIC_KEY="")
+    def test_group_gift_cancel_refunds(self):
+        category = Category.objects.create(name="Hampers2", slug="hampers2")
+        product = Product.objects.create(
+            category=category,
+            name="Team Hamper",
+            slug="team-hamper",
+            description="Hamper.",
+            base_price="500.00",
+            is_active=True,
+        )
+        address = self.client.post(
+            "/api/v1/auth/addresses/",
+            {
+                "label": "Office",
+                "recipient_name": "Team",
+                "phone": "0821234567",
+                "street_address": "3 Work St",
+                "suburb": "Sandton",
+                "city": "Johannesburg",
+                "province": "Gauteng",
+                "postal_code": "2196",
+            },
+            format="json",
+        )
+        self.client.post("/api/v1/orders/cart/items/", {"product_id": product.id, "quantity": 1}, format="json")
+        gift = self.client.post(
+            "/api/v1/group-gifts/",
+            {
+                "title": "Office gift",
+                "address_id": address.json()["id"],
+                "delivery_date": (date.today() + timedelta(days=14)).isoformat(),
+            },
+            format="json",
+        )
+        gift_id = gift.json()["id"]
+        token = gift.json()["share_token"]
+
+        self.client.force_authenticate(user=None)
+        contribute = self.client.post(
+            f"/api/v1/group-gifts/public/{token}/contribute/",
+            {
+                "amount": "100.00",
+                "contributor_name": "Colleague",
+                "contributor_email": "colleague@example.com",
+            },
+            format="json",
+        )
+        self.client.post(
+            "/api/v1/group-gifts/contribute/verify/",
+            {"contribution_id": contribute.json()["contribution_id"], "reference": contribute.json()["reference"]},
+            format="json",
+        )
+
+        self.client.force_authenticate(user=self.user)
+        cancel = self.client.post(f"/api/v1/group-gifts/{gift_id}/cancel/")
+        self.assertEqual(cancel.status_code, status.HTTP_200_OK)
+        self.assertEqual(cancel.json()["group_gift"]["status"], "cancelled")
+
+
 class AnalyticsSmokeTests(APITestCase):
     def setUp(self):
         self.staff = User.objects.create_user(

@@ -65,6 +65,17 @@ class _ArPreviewScreenState extends ConsumerState<ArPreviewScreen> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         title: const Text('Preview in your space'),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(28),
+          child: Padding(
+            padding: EdgeInsets.only(bottom: 8),
+            child: Text(
+              'AR-lite preview — native ARCore/ARKit coming in a future update',
+              style: TextStyle(color: Colors.white54, fontSize: 11),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
       ),
       body: productAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: SpoilColors.teal)),

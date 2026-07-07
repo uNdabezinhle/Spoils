@@ -128,6 +128,26 @@ def charge_authorization(
     }
 
 
+def refund_transaction(*, reference: str, amount_cents: int | None = None) -> dict:
+    if is_demo_mode():
+        return {"status": "success", "reference": reference, "demo_mode": True}
+
+    payload: dict = {"transaction": reference}
+    if amount_cents is not None:
+        payload["amount"] = amount_cents
+
+    response = requests.post(
+        "https://api.paystack.co/refund",
+        headers={"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"},
+        json=payload,
+        timeout=30,
+    )
+    body = response.json()
+    if not response.ok or not body.get("status"):
+        raise PaystackError(body.get("message", "Could not process refund."))
+    return {"status": "success", "reference": reference, "demo_mode": False}
+
+
 def verify_webhook_signature(*, payload: bytes, signature: str) -> bool:
     """Validate Paystack x-paystack-signature (HMAC SHA512 of raw body)."""
     if is_demo_mode():

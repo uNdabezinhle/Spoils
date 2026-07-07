@@ -10,6 +10,7 @@ import '../../../shared/widgets/product_card.dart';
 import '../../auth/models/address_model.dart';
 import '../../auth/providers/address_provider.dart';
 import '../data/reminders_repository.dart';
+import '../../catalog/models/product_model.dart';
 import '../models/auto_gift_proposal_model.dart';
 import '../models/recipient_model.dart';
 import '../my_people_screen.dart';
@@ -59,11 +60,13 @@ class OccasionDetailScreen extends ConsumerWidget {
                         const SizedBox(height: 12),
                         Text(detail.recipientNotes, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic)),
                       ],
-                      if (detail.skippedThisYear)
+                      if (detail.skippedThisYear || detail.markedSentThisYear)
                         Padding(
                           padding: const EdgeInsets.only(top: 12),
                           child: Text(
-                            'Reminders skipped for this year.',
+                            detail.markedSentThisYear
+                                ? 'You marked this occasion as handled for this year.'
+                                : 'Reminders skipped for this year.',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: SpoilColors.charcoalMuted),
                           ),
                         ),
@@ -88,10 +91,24 @@ class OccasionDetailScreen extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () => context.go(shopPathForOccasion(detail.type)),
+                icon: const Icon(Icons.card_giftcard_outlined),
+                label: const Text('Send a gift now'),
+              ),
+              const SizedBox(height: 12),
               _EngagementSettingsCard(occasionId: occasionId, detail: detail),
               const SizedBox(height: 16),
               Row(
                 children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: detail.markedSentThisYear ? null : () => _markSent(context, ref),
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text('Mark sent'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _snooze(context, ref),
@@ -134,7 +151,7 @@ class OccasionDetailScreen extends ConsumerWidget {
                       childAspectRatio: 0.68,
                     ),
                     itemCount: products.length,
-                    itemBuilder: (_, i) => ProductCard(product: products[i]),
+                    itemBuilder: (_, i) => _SuggestionCard(product: products[i]),
                   );
                 },
               ),
@@ -166,6 +183,38 @@ class OccasionDetailScreen extends ConsumerWidget {
       ref.invalidate(upcomingOccasionsProvider);
       ref.invalidate(occasionCalendarProvider);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reminder snoozed for 3 days.')));
+    }
+  }
+
+  Future<void> _markSent(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Mark as sent?'),
+        content: const Text('We\'ll pause reminders for this year — useful if you already spoiled them elsewhere.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Mark sent')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(remindersRepositoryProvider).markOccasionSent(occasionId);
+      if (context.mounted) {
+        ref.invalidate(occasionDetailProvider(occasionId));
+        ref.invalidate(inAppRemindersProvider);
+        ref.invalidate(upcomingOccasionsProvider);
+        ref.invalidate(occasionCalendarProvider);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Marked as sent for this year.')));
+      }
+    } on DioException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ref.read(remindersRepositoryProvider).parseError(e))),
+        );
+      }
     }
   }
 
@@ -269,6 +318,7 @@ class _EngagementSettingsCardState extends ConsumerState<_EngagementSettingsCard
   late bool _shareWithFamily;
   late bool _surpriseMode;
   late bool _giftAnonymously;
+  late bool _autoSend;
   final _budgetController = TextEditingController();
   int? _surpriseAddressId;
   bool _saving = false;
@@ -279,6 +329,7 @@ class _EngagementSettingsCardState extends ConsumerState<_EngagementSettingsCard
     _shareWithFamily = widget.detail.shareWithFamily;
     _surpriseMode = widget.detail.surpriseModeEnabled;
     _giftAnonymously = widget.detail.giftAnonymously;
+    _autoSend = widget.detail.autoSendEnabled;
     _surpriseAddressId = widget.detail.surpriseAddressId;
     if (widget.detail.surpriseBudget != null) {
       _budgetController.text = widget.detail.surpriseBudget!;
@@ -299,6 +350,7 @@ class _EngagementSettingsCardState extends ConsumerState<_EngagementSettingsCard
             shareWithFamily: _shareWithFamily,
             surpriseModeEnabled: _surpriseMode,
             giftAnonymously: _giftAnonymously,
+            autoSendEnabled: _autoSend,
             surpriseBudget: _surpriseMode && _budgetController.text.trim().isNotEmpty
                 ? _budgetController.text.trim()
                 : null,
@@ -379,6 +431,14 @@ class _EngagementSettingsCardState extends ConsumerState<_EngagementSettingsCard
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
+              title: const Text('Auto-send gifts'),
+              subtitle: const Text('Approve once — we charge and send each year without asking again.'),
+              value: _autoSend,
+              onChanged: (v) => setState(() => _autoSend = v),
+              activeColor: SpoilColors.teal,
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
               title: const Text('Surprise mode'),
               subtitle: const Text('We pick and send a gift 3 days before, within your budget.'),
               value: _surpriseMode,
@@ -420,6 +480,35 @@ class _EngagementSettingsCardState extends ConsumerState<_EngagementSettingsCard
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SuggestionCard extends StatelessWidget {
+  const _SuggestionCard({required this.product});
+
+  final ProductModel product;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ProductCard(product: product),
+        if (product.pickReason.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Why we picked this: ${product.pickReason}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: SpoilColors.charcoalMuted,
+                    fontStyle: FontStyle.italic,
+                  ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
     );
   }
 }

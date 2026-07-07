@@ -16,9 +16,11 @@ urlpatterns = [
     path("occasions/<int:pk>/approve-gift/", views.occasion_approve_gift, name="occasion-approve-gift"),
     path("occasions/<int:pk>/reject-gift/", views.occasion_reject_gift, name="occasion-reject-gift"),
     path("occasions/<int:pk>/surprise-settings/", views.occasion_surprise_settings, name="occasion-surprise-settings"),
+    path("occasions/<int:pk>/mark-sent/", views.occasion_mark_sent, name="occasion-mark-sent"),
     path("import/contacts/", views.import_contacts, name="import-contacts"),
     path("import/calendar/", views.import_calendar, name="import-calendar"),
     path("family/", views.family_group, name="family-group"),
     path("family/join/", views.family_join, name="family-join"),
+    path("family/leave/", views.family_leave, name="family-leave"),
     path("family/calendar/", views.family_calendar, name="family-calendar"),
 ]

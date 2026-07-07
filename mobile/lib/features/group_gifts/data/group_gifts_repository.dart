@@ -60,6 +60,12 @@ class GroupGiftsRepository {
     return GroupGiftPaymentInitResult.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<GroupGiftModel> cancelGroupGift(int id) async {
+    final response = await _dio.post('/group-gifts/$id/cancel/');
+    final data = response.data as Map<String, dynamic>;
+    return GroupGiftModel.fromJson(data['group_gift'] as Map<String, dynamic>);
+  }
+
   Future<GroupGiftModel> verifyContribution({
     required int contributionId,
     required String reference,

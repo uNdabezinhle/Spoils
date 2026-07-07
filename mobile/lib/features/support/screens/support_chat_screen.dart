@@ -22,12 +22,13 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
   Timer? _pollTimer;
   List<SupportMessageModel> _messages = [];
   bool _loading = true;
+  String? _lastMessageAt;
 
   @override
   void initState() {
     super.initState();
     _load();
-    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) => _load(silent: true));
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) => _pollNewMessages());
   }
 
   @override
@@ -46,12 +47,29 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
         setState(() {
           _messages = conversation.messages;
           _loading = false;
+          _lastMessageAt = conversation.messages.isNotEmpty ? conversation.messages.last.createdAt : null;
         });
         _scrollToEnd();
       }
     } catch (_) {
       if (mounted && !silent) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _pollNewMessages() async {
+    if (_lastMessageAt == null) {
+      await _load(silent: true);
+      return;
+    }
+    try {
+      final conversation = await ref.read(supportRepositoryProvider).fetchConversation(since: _lastMessageAt);
+      if (!mounted || conversation.messages.isEmpty) return;
+      setState(() {
+        _messages = [..._messages, ...conversation.messages];
+        _lastMessageAt = conversation.messages.last.createdAt;
+      });
+      _scrollToEnd();
+    } catch (_) {}
   }
 
   void _scrollToEnd() {
@@ -71,7 +89,10 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
     if (body.isEmpty) return;
     _controller.clear();
     final message = await ref.read(supportRepositoryProvider).sendMessage(body);
-    setState(() => _messages = [..._messages, message]);
+    setState(() {
+      _messages = [..._messages, message];
+      _lastMessageAt = message.createdAt;
+    });
     _scrollToEnd();
     ref.invalidate(supportConversationProvider);
   }
@@ -85,6 +106,17 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
           onPressed: () => context.canPop() ? context.pop() : context.go('/profile'),
         ),
         title: const Text('Live chat'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: Text(
+                'Live',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: SpoilColors.teal),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [

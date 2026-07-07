@@ -110,6 +110,8 @@ class OccasionDetailModel {
     this.surpriseBudget,
     this.giftAnonymously = false,
     this.surpriseAddressId,
+    this.autoSendEnabled = false,
+    this.markedSentThisYear = false,
   });
 
   final int id;
@@ -130,6 +132,8 @@ class OccasionDetailModel {
   final String? surpriseBudget;
   final bool giftAnonymously;
   final int? surpriseAddressId;
+  final bool autoSendEnabled;
+  final bool markedSentThisYear;
 
   bool get hasPendingAutoGift => pendingAutoGift != null;
 
@@ -153,6 +157,8 @@ class OccasionDetailModel {
       surpriseBudget: json['surprise_budget'] as String?,
       giftAnonymously: json['gift_anonymously'] as bool? ?? false,
       surpriseAddressId: json['surprise_address_id'] as int?,
+      autoSendEnabled: json['auto_send_enabled'] as bool? ?? false,
+      markedSentThisYear: json['marked_sent_this_year'] as bool? ?? false,
     );
   }
 }

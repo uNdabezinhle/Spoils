@@ -3,6 +3,21 @@ from apps.products.models import Product
 from apps.products.serializers import ProductListSerializer
 
 
+def _pick_reason(*, product: Product, occasion, purchased_ids: set[int]) -> str:
+    occasion_label = occasion.get_type_display().lower()
+    if product.occasion == occasion.type:
+        return f"Popular for {occasion_label}s like {occasion.recipient.name}'s"
+    if product.id in purchased_ids:
+        return "You've ordered this before — a safe favourite"
+    if product.is_featured:
+        return "Staff favourite this season"
+    if product.is_popular:
+        return "Trending with Spoils customers right now"
+    if occasion.recipient.notes:
+        return f"A thoughtful match for {occasion.recipient.name}"
+    return "Curated for someone special"
+
+
 def suggest_gifts_for_occasion(*, occasion, user, limit: int = 8) -> list[dict]:
     """Context-aware gift suggestions for an occasion."""
     paid_statuses = ["paid", "processing", "shipped", "delivered"]
@@ -52,4 +67,8 @@ def suggest_gifts_for_occasion(*, occasion, user, limit: int = 8) -> list[dict]:
         return (repurchase, product.is_featured, product.is_popular)
 
     scored.sort(key=sort_key, reverse=True)
-    return ProductListSerializer(scored[:limit], many=True).data
+    selected = scored[:limit]
+    serialized = ProductListSerializer(selected, many=True).data
+    for item, product in zip(serialized, selected):
+        item["pick_reason"] = _pick_reason(product=product, occasion=occasion, purchased_ids=purchased_ids)
+    return serialized

@@ -16,6 +16,21 @@ APPROVAL_WINDOW_DAYS = 7
 APPROVAL_EXPIRY_DAYS_BEFORE = 2
 
 
+def _resolve_auto_send_address_id(*, user, occasion: Occasion) -> int | None:
+    if occasion.surprise_address_id:
+        from apps.users.models import Address
+
+        if Address.objects.filter(user=user, pk=occasion.surprise_address_id).exists():
+            return occasion.surprise_address_id
+    from apps.users.models import Address
+
+    default = Address.objects.filter(user=user, is_default=True).first()
+    if default:
+        return default.id
+    fallback = Address.objects.filter(user=user).order_by("-created_at").first()
+    return fallback.id if fallback else None
+
+
 def _matching_auto_subscription(*, user, occasion: Occasion) -> UserSubscription | None:
     subs = UserSubscription.objects.filter(
         user=user,
@@ -121,6 +136,21 @@ def create_proposal_for_occasion(*, occasion: Occasion, subscription: UserSubscr
         delivery_date=next_date,
         expires_at=expires_at,
     )
+
+    if occasion.auto_send_enabled:
+        address_id = _resolve_auto_send_address_id(user=user, occasion=occasion)
+        if address_id:
+            try:
+                approve_proposal(proposal=proposal, address_id=address_id)
+                send_push_notification(
+                    user=user,
+                    title=f"Gift sent for {occasion.recipient.name}",
+                    body=f"Auto-send picked {product.name}. We'll deliver on {next_date}.",
+                    data={"type": "order_status", "occasion_id": str(occasion.id)},
+                )
+                return proposal
+            except ValueError:
+                pass
 
     send_push_notification(
         user=user,

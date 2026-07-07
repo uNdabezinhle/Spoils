@@ -15,6 +15,7 @@ class ProductModel {
     this.previewMode = 'image',
     this.model3dUrl = '',
     this.previewScale = '1.0',
+    this.pickReason = '',
   });
 
   final int id;
@@ -32,6 +33,7 @@ class ProductModel {
   final String previewMode;
   final String model3dUrl;
   final String previewScale;
+  final String pickReason;
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     return ProductModel(
@@ -50,6 +52,7 @@ class ProductModel {
       previewMode: json['preview_mode'] as String? ?? 'image',
       model3dUrl: json['model_3d_url'] as String? ?? '',
       previewScale: json['preview_scale']?.toString() ?? '1.0',
+      pickReason: json['pick_reason'] as String? ?? '',
     );
   }
 }

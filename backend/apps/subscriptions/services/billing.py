@@ -150,6 +150,9 @@ def renew_subscription(sub: UserSubscription) -> bool:
                 "paystack_authorization_code",
             ]
         )
+        from .fulfillment import fulfill_subscription_renewal
+
+        fulfill_subscription_renewal(sub=sub, payment_reference=reference)
         return True
 
     sub.status = "paused"

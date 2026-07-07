@@ -50,6 +50,7 @@ class GroupGiftContribution(models.Model):
         ("pending", "Pending"),
         ("paid", "Paid"),
         ("failed", "Failed"),
+        ("refunded", "Refunded"),
     ]
 
     group_gift = models.ForeignKey(GroupGift, on_delete=models.CASCADE, related_name="contributions")

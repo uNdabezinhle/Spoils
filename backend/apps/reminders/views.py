@@ -43,6 +43,7 @@ def _serialize_occasion(o: Occasion, *, today):
         "surprise_budget": str(o.surprise_budget) if o.surprise_budget is not None else None,
         "gift_anonymously": o.gift_anonymously,
         "surprise_address_id": o.surprise_address_id,
+        "auto_send_enabled": o.auto_send_enabled,
     }
 
 
@@ -154,6 +155,11 @@ def occasion_detail(request, pk):
                 occasion=occasion,
                 status="skipped",
                 skip_year=next_date.year,
+            ).exists(),
+            "marked_sent_this_year": ReminderLog.objects.filter(
+                occasion=occasion,
+                status="acted_on",
+                sent_at__year=next_date.year,
             ).exists(),
             "pending_auto_gift": serialize_pending_proposal(user=request.user, occasion=occasion),
         }
@@ -415,6 +421,8 @@ def occasion_surprise_settings(request, pk):
     if "surprise_address_id" in request.data:
         raw = request.data["surprise_address_id"]
         occasion.surprise_address_id = int(raw) if raw else None
+    if "auto_send_enabled" in request.data:
+        occasion.auto_send_enabled = bool(request.data["auto_send_enabled"])
 
     occasion.save(
         update_fields=[
@@ -423,7 +431,52 @@ def occasion_surprise_settings(request, pk):
             "gift_anonymously",
             "share_with_family",
             "surprise_address_id",
+            "auto_send_enabled",
         ]
     )
     today = timezone.localdate()
     return Response(_serialize_occasion(occasion, today=today))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def occasion_mark_sent(request, pk):
+    occasion = _user_occasion(request.user, pk)
+    if not occasion:
+        return Response({"detail": "Occasion not found."}, status=404)
+
+    today = timezone.localdate()
+    next_date = next_occurrence_on(occasion.date, today=today)
+    product_id = request.data.get("product_id")
+
+    from apps.products.models import Product
+
+    chosen = None
+    if product_id:
+        chosen = Product.objects.filter(pk=product_id, is_active=True).first()
+
+    ReminderLog.objects.create(
+        occasion=occasion,
+        status="acted_on",
+        chosen_product=chosen,
+    )
+    if not ReminderLog.objects.filter(occasion=occasion, status="skipped", skip_year=next_date.year).exists():
+        ReminderLog.objects.create(occasion=occasion, status="skipped", skip_year=next_date.year)
+
+    return Response(
+        {
+            "detail": f"Marked as sent for {next_date.year}. Reminders paused until next year.",
+            "skip_year": next_date.year,
+        }
+    )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def family_leave(request):
+    from .services.family import get_user_family_group, leave_family_group
+
+    if not get_user_family_group(request.user):
+        return Response({"detail": "You are not in a family group."}, status=404)
+    leave_family_group(user=request.user)
+    return Response({"detail": "Left family group."})

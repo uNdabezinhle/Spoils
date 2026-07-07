@@ -46,6 +46,7 @@ class Occasion(models.Model):
     surprise_budget = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     gift_anonymously = models.BooleanField(default=False)
     surprise_address_id = models.PositiveIntegerField(null=True, blank=True)
+    auto_send_enabled = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

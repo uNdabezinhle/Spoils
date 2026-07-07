@@ -32,6 +32,35 @@ class _FamilyCalendarViewState extends ConsumerState<FamilyCalendarView> {
     });
   }
 
+  Future<void> _leaveFamily(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Leave family group?'),
+        content: const Text('Your shared occasions will no longer appear on the family calendar.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Leave')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ref.read(remindersRepositoryProvider).leaveFamilyGroup();
+      ref.invalidate(familyGroupProvider);
+      ref.invalidate(familyCalendarProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Left family group.')));
+      }
+    } on DioException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ref.read(remindersRepositoryProvider).parseError(e))),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final groupAsync = ref.watch(familyGroupProvider);
@@ -83,6 +112,11 @@ class _FamilyCalendarViewState extends ConsumerState<FamilyCalendarView> {
                     Text(
                       '${group.members.length} member${group.members.length == 1 ? '' : 's'}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: SpoilColors.charcoalMuted),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: () => _leaveFamily(context, ref),
+                      child: const Text('Leave family group'),
                     ),
                   ],
                 ),

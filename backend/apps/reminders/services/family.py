@@ -6,6 +6,25 @@ from ..models import FamilyGroup, FamilyMembership, Occasion
 from ..utils import next_occurrence_on
 
 
+def leave_family_group(*, user) -> bool:
+    membership = FamilyMembership.objects.filter(user=user).select_related("group").first()
+    if not membership:
+        return False
+    group = membership.group
+    if membership.role == "owner":
+        other = FamilyMembership.objects.filter(group=group).exclude(user=user).order_by("joined_at").first()
+        if other:
+            other.role = "owner"
+            other.save(update_fields=["role"])
+            group.owner = other.user
+            group.save(update_fields=["owner"])
+        else:
+            group.delete()
+            return True
+    membership.delete()
+    return True
+
+
 def get_user_family_group(user) -> FamilyGroup | None:
     membership = FamilyMembership.objects.filter(user=user).select_related("group").first()
     return membership.group if membership else None

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/spoil_colors.dart';
 import '../../../shared/utils/currency_formatter.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../data/group_gifts_repository.dart';
 import '../providers/group_gifts_provider.dart';
 
 class GroupGiftDetailScreen extends ConsumerWidget {
@@ -12,8 +15,38 @@ class GroupGiftDetailScreen extends ConsumerWidget {
 
   final String token;
 
+  Future<void> _cancelGift(BuildContext context, WidgetRef ref, int giftId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel group gift?'),
+        content: const Text('Contributors will be refunded. This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Keep')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Cancel gift')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final repo = ref.read(groupGiftsRepositoryProvider);
+    try {
+      await repo.cancelGroupGift(giftId);
+      ref.invalidate(groupGiftByTokenProvider(token));
+      ref.invalidate(myGroupGiftsProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Group gift cancelled and refunds issued.')));
+      }
+    } on DioException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(repo.parseError(e))));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isAuthenticated = ref.watch(authProvider).isAuthenticated;
     final giftAsync = ref.watch(groupGiftByTokenProvider(token));
 
     return Scaffold(
@@ -57,6 +90,13 @@ class GroupGiftDetailScreen extends ConsumerWidget {
                 icon: const Icon(Icons.share_outlined),
                 label: const Text('Copy share link'),
               ),
+              if (isAuthenticated) ...[
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => _cancelGift(context, ref, gift.id),
+                  child: const Text('Cancel & refund contributors', style: TextStyle(color: Colors.redAccent)),
+                ),
+              ],
             ] else
               Text(
                 gift.status == 'ordered' ? 'Fully funded — order placed!' : 'This group gift is ${gift.status}.',

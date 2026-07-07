@@ -43,6 +43,18 @@ All eight MVP phases are implemented on `main`:
 | Shared family calendars | ✅ | ✅ |
 | Anonymous gifting via reminders | ✅ | ✅ |
 
+## Phase-2 polish
+
+| Feature | Backend | Mobile |
+|---------|---------|--------|
+| Auto-send-once (annual auto-gift) | ✅ | ✅ |
+| Mark occasion as sent | ✅ | ✅ |
+| Gift suggestion “why we picked this” | ✅ | ✅ |
+| Leave family group | ✅ | ✅ |
+| Group gift cancel & refunds | ✅ | ✅ |
+| Subscription box fulfillment on renewal | ✅ | — (order + push) |
+| Live chat incremental polling | ✅ | ✅ |
+
 ## Quick start
 
 ### 1. Environment
@@ -91,7 +103,7 @@ flutter run --dart-define=API_BASE_URL=http://192.168.1.x:8000/api/v1
 
 ### 4. Tests
 
-**API smoke tests (25):**
+**API smoke tests (28):**
 
 ```bash
 cd backend

@@ -30,4 +30,8 @@ app.conf.beat_schedule = {
         "task": "apps.reminders.tasks.process_surprise_mode_gifts",
         "schedule": crontab(hour=7, minute=30),
     },
+    "expire-unfunded-group-gifts-daily": {
+        "task": "apps.group_gifts.tasks.expire_unfunded_group_gifts",
+        "schedule": crontab(hour=5, minute=30),
+    },
 }

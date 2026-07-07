@@ -80,6 +80,7 @@ class RemindersRepository {
     bool? giftAnonymously,
     bool? shareWithFamily,
     int? surpriseAddressId,
+    bool? autoSendEnabled,
   }) async {
     final response = await _dio.post('/reminders/occasions/$occasionId/surprise-settings/', data: {
       if (surpriseModeEnabled != null) 'surprise_mode_enabled': surpriseModeEnabled,
@@ -87,8 +88,19 @@ class RemindersRepository {
       if (giftAnonymously != null) 'gift_anonymously': giftAnonymously,
       if (shareWithFamily != null) 'share_with_family': shareWithFamily,
       if (surpriseAddressId != null) 'surprise_address_id': surpriseAddressId,
+      if (autoSendEnabled != null) 'auto_send_enabled': autoSendEnabled,
     });
     return response.data as Map<String, dynamic>;
+  }
+
+  Future<void> markOccasionSent(int occasionId, {int? productId}) async {
+    await _dio.post('/reminders/occasions/$occasionId/mark-sent/', data: {
+      if (productId != null) 'product_id': productId,
+    });
+  }
+
+  Future<void> leaveFamilyGroup() async {
+    await _dio.post('/reminders/family/leave/');
   }
 
   Future<FamilyCalendarMonthModel> fetchFamilyCalendar({required int year, required int month}) async {
