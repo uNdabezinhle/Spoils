@@ -58,6 +58,7 @@ class RecipientFormNotifier extends StateNotifier<AsyncValue<void>> {
   final Ref _ref;
 
   Future<bool> save(RecipientModel recipient) async {
+    if (!mounted) return false;
     state = const AsyncLoading();
     try {
       if (recipient.id == null) {
@@ -65,6 +66,7 @@ class RecipientFormNotifier extends StateNotifier<AsyncValue<void>> {
       } else {
         await _repository.updateRecipient(recipient);
       }
+      if (!mounted) return true;
       _ref.invalidate(recipientsProvider);
       _ref.invalidate(upcomingOccasionsProvider);
       _ref.invalidate(inAppRemindersProvider);
@@ -72,15 +74,18 @@ class RecipientFormNotifier extends StateNotifier<AsyncValue<void>> {
       state = const AsyncData(null);
       return true;
     } on DioException catch (e) {
+      if (!mounted) return false;
       state = AsyncError(_repository.parseError(e), StackTrace.current);
       return false;
     }
   }
 
   Future<bool> remove(int id) async {
+    if (!mounted) return false;
     state = const AsyncLoading();
     try {
       await _repository.deleteRecipient(id);
+      if (!mounted) return true;
       _ref.invalidate(recipientsProvider);
       _ref.invalidate(upcomingOccasionsProvider);
       _ref.invalidate(inAppRemindersProvider);
@@ -88,6 +93,7 @@ class RecipientFormNotifier extends StateNotifier<AsyncValue<void>> {
       state = const AsyncData(null);
       return true;
     } on DioException catch (e) {
+      if (!mounted) return false;
       state = AsyncError(_repository.parseError(e), StackTrace.current);
       return false;
     }

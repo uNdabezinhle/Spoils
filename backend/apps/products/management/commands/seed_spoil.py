@@ -12,6 +12,11 @@ from apps.products.models import Category, MessageTemplate, Product, WrappingOpt
 class Command(BaseCommand):
     help = "Seed Spoils with categories, products, wrapping options, and content."
 
+    @staticmethod
+    def _seed_image(seed: str, *, width: int = 600, height: int = 600) -> str:
+        """Stable placeholder images for dev/demo (avoids broken Unsplash hotlinks)."""
+        return f"https://picsum.photos/seed/spoil-{seed}/{width}/{height}"
+
     @transaction.atomic
     def handle(self, *args, **options):
         self.stdout.write("Seeding Spoils catalogue…")
@@ -33,7 +38,7 @@ class Command(BaseCommand):
                     "description": desc,
                     "sort_order": order,
                     "is_active": True,
-                    "image_url": f"https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=400&h=300&fit=crop",
+                    "image_url": self._seed_image(f"cat-{slug}", width=400, height=300),
                 },
             )
             categories[slug] = cat
@@ -66,16 +71,7 @@ class Command(BaseCommand):
             ("mini-succulent-garden", "Mini Succulent Garden", "just-because", "Three succulents in a ceramic planter.", "199.00", False, True, "Same-day in JHB & CPT", "just_because"),
         ]
 
-        image_seeds = {
-            "flowers": "photo-1490750967868-88d62216e903",
-            "hampers": "photo-1549465220-1a0b6e55668e",
-            "personalised": "photo-1513885535751-8b9238bd345a",
-            "experiences": "photo-1506905925346-21bda4d32df4",
-            "just-because": "photo-1513201099705-a9746e1e201f",
-        }
-
         for slug, name, cat_slug, desc, price, featured, popular, delivery, occasion in products_data:
-            img_id = image_seeds.get(cat_slug, "photo-1513885535751-8b9238bd345a")
             Product.objects.update_or_create(
                 slug=slug,
                 defaults={
@@ -83,7 +79,7 @@ class Command(BaseCommand):
                     "category": categories[cat_slug],
                     "description": desc,
                     "base_price": Decimal(price),
-                    "image_url": f"https://images.unsplash.com/{img_id}?w=600&h=600&fit=crop",
+                    "image_url": self._seed_image(slug),
                     "delivery_info": delivery,
                     "occasion": occasion,
                     "is_featured": featured,
@@ -103,7 +99,7 @@ class Command(BaseCommand):
                     "Use Preview in your space to place the 3D box in your room before you order."
                 ),
                 "base_price": Decimal("549.00"),
-                "image_url": "https://images.unsplash.com/photo-1549465220-1a0b6e55668e?w=600&h=600&fit=crop",
+                "image_url": self._seed_image("ar-luxury-gift-box"),
                 "delivery_info": "2–3 business days nationwide",
                 "occasion": "just_because",
                 "is_featured": True,
@@ -218,7 +214,7 @@ class Command(BaseCommand):
                     "features": features,
                     "sort_order": i,
                     "is_active": True,
-                    "image_url": "https://images.unsplash.com/photo-1549465220-1a0b6e55668e?w=600&h=400&fit=crop",
+                    "image_url": self._seed_image(slug, width=600, height=400),
                 },
             )
 
