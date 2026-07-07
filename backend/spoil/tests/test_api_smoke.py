@@ -775,6 +775,22 @@ class AnalyticsSmokeTests(APITestCase):
         self.assertContains(page, "Revenue")
 
 
+class ProductionConfigSmokeTests(APITestCase):
+    def test_production_check_registered(self):
+        from django.core.management import get_commands
+
+        self.assertIn("production_check", get_commands())
+
+    def test_production_check_fails_when_debug_true(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+
+        with self.assertRaises(CommandError):
+            call_command("production_check", stdout=StringIO())
+
+
 class PaystackWebhookSmokeTests(APITestCase):
     @override_settings(PAYSTACK_SECRET_KEY="sk_test_secret")
     def test_webhook_rejects_invalid_signature(self):

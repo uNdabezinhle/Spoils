@@ -1,0 +1,103 @@
+# Production stack — use with a filled .env (see .env.production.example).
+#
+#   cp .env.production.example .env
+#   # edit .env with real secrets
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# First boot:
+#   docker compose -f docker-compose.prod.yml exec api python manage.py migrate
+#   docker compose -f docker-compose.prod.yml exec api python manage.py seed_spoil
+#   docker compose -f docker-compose.prod.yml exec api python manage.py createsuperuser
+#   docker compose -f docker-compose.prod.yml exec api python manage.py production_check
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-spoil}
+      POSTGRES_USER: ${POSTGRES_USER:-spoil}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-spoil} -d ${POSTGRES_DB:-spoil}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./backend
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+      python manage.py collectstatic --noinput &&
+      gunicorn spoil.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-spoil}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-spoil}
+      REDIS_URL: redis://redis:6379/0
+      DJANGO_DEBUG: "false"
+      DJANGO_USE_RUNSERVER: "false"
+    volumes:
+      - media_data:/app/media
+      # Mount Firebase Admin SDK JSON (create ./secrets/ locally, never commit):
+      # - ./secrets/firebase-adminsdk.json:/run/secrets/firebase-adminsdk.json:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  celery:
+    build:
+      context: ./backend
+    command: celery -A spoil worker -l info
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-spoil}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-spoil}
+      REDIS_URL: redis://redis:6379/0
+      DJANGO_DEBUG: "false"
+    volumes:
+      - media_data:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  celery-beat:
+    build:
+      context: ./backend
+    command: celery -A spoil beat -l info
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-spoil}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-spoil}
+      REDIS_URL: redis://redis:6379/0
+      DJANGO_DEBUG: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  media_data:

@@ -103,7 +103,7 @@ flutter run --dart-define=API_BASE_URL=http://192.168.1.x:8000/api/v1
 
 ### 4. Tests
 
-**API smoke tests (28):**
+**API smoke tests (30):**
 
 ```bash
 cd backend
@@ -161,22 +161,81 @@ Spoils/
 ├── backend/          Django 5 + DRF (users, products, orders, reminders, subscriptions, content)
 ├── mobile/           Flutter + Riverpod + go_router
 ├── docker-compose.yml
+├── docker-compose.prod.yml
 ├── .env.example
+├── .env.production.example
 └── docs/             SDLC & brand documentation
 ```
+
+## Production deployment
+
+### 1. Configure environment
+
+```bash
+cp .env.production.example .env
+# Edit .env — secret key, hosts, Paystack live keys, SMTP, Firebase path, CORS origins
+```
+
+See `.env.production.example` for every variable. Minimum for go-live:
+
+| Service | Variable(s) |
+|---------|-------------|
+| Django | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=false`, `DJANGO_ALLOWED_HOSTS` |
+| Payments | `PAYSTACK_SECRET_KEY`, `PAYSTACK_PUBLIC_KEY` (live keys) |
+| Email | `EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` |
+| Background jobs | `REDIS_URL` + Celery worker + beat (included in prod compose) |
+| Push | `FIREBASE_CREDENTIALS_PATH` → mount JSON in `docker-compose.prod.yml` |
+| Photos | `CLOUDINARY_*` or persistent `media_data` volume |
+| Social login | `GOOGLE_OAUTH_CLIENT_ID`, `APPLE_CLIENT_ID` |
+
+Register Paystack webhook: `https://<your-api>/api/v1/orders/paystack/webhook/`
+
+### 2. Start production stack
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml exec api python manage.py migrate
+docker compose -f docker-compose.prod.yml exec api python manage.py seed_spoil
+docker compose -f docker-compose.prod.yml exec api python manage.py createsuperuser
+docker compose -f docker-compose.prod.yml exec api python manage.py production_check --strict
+```
+
+Put **nginx** or a cloud load balancer in front of `api:8000` with TLS. Set `DJANGO_BEHIND_PROXY=true` and `DJANGO_CSRF_TRUSTED_ORIGINS=https://your-api-host`.
+
+### 3. Mobile production build
+
+```bash
+cd mobile
+# Linux/macOS
+export API_BASE_URL=https://api.spoils.co.za/api/v1
+export FIREBASE_PROJECT_ID=...
+export GOOGLE_CLIENT_ID=...   # same as GOOGLE_OAUTH_CLIENT_ID
+./scripts/build_production.sh
+
+# Windows PowerShell
+$env:API_BASE_URL = "https://api.spoils.co.za/api/v1"
+.\scripts\build_production.ps1
+```
+
+Configure Firebase in the [Firebase Console](https://console.firebase.google.com/) for Android/iOS, then pass the web app config values as `--dart-define` (see `.env.production.example` comments).
 
 ## Environment reference
 
 | Variable | Purpose |
 |----------|---------|
 | `DJANGO_SECRET_KEY` | Django secret (change in production) |
+| `DJANGO_DEBUG` | Must be `false` in production |
+| `DJANGO_ALLOWED_HOSTS` | Comma-separated API hostnames |
+| `DJANGO_BEHIND_PROXY` | `true` behind nginx/ALB (honours `X-Forwarded-Proto`) |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | HTTPS origins for admin/forms |
 | `DATABASE_URL` | PostgreSQL connection string |
-| `REDIS_URL` | Celery broker (reminder emails) |
-| `PAYSTACK_SECRET_KEY` | Empty = demo checkout; set for Paystack |
-| `CLOUDINARY_*` | Photo uploads; falls back to local `media/` in DEBUG |
-| `FIREBASE_CREDENTIALS_PATH` | FCM push (optional; logs stub when empty) |
-| `GOOGLE_OAUTH_CLIENT_ID` / `APPLE_CLIENT_ID` | Social login (optional) |
+| `REDIS_URL` | Celery broker (reminder emails, renewals) |
+| `PAYSTACK_SECRET_KEY` | Empty = demo checkout; `sk_live_*` for production |
+| `CLOUDINARY_*` | Photo uploads; falls back to local `media/` volume |
+| `FIREBASE_CREDENTIALS_PATH` | FCM push via Firebase Admin SDK JSON |
+| `GOOGLE_OAUTH_CLIENT_ID` / `APPLE_CLIENT_ID` | Social login (backend + mobile `GOOGLE_CLIENT_ID`) |
 | `EMAIL_HOST` | SMTP; console backend when unset |
+| `CORS_ALLOWED_ORIGINS` | Lock down to your app origin(s) in production |
 
 ## Branch workflow
 

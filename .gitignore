@@ -1,7 +1,10 @@
 # Environment
 .env
 .env.local
+.env.production
 *.env
+secrets/
+firebase-adminsdk*.json
 
 # Python
 __pycache__/
